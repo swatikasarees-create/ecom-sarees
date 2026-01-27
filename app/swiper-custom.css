@@ -1,0 +1,266 @@
+/* Swiper Custom Styles for Next.js */
+
+/* Ensure Swiper container displays properly */
+.swiper {
+  width: 100%;
+  height: auto;
+  position: relative;
+  overflow: hidden;
+}
+
+.swiper-wrapper {
+  display: flex !important;
+  flex-direction: row !important;
+  align-items: stretch !important;
+  box-sizing: border-box;
+}
+
+.swiper-slide {
+  display: flex;
+  flex-direction: column;
+  flex-shrink: 0;
+  height: auto;
+  position: relative;
+  box-sizing: border-box;
+}
+
+/* Ensure proper width calculation */
+.swiper-slide img {
+  width: 100%;
+  height: auto;
+  display: block;
+}
+
+/* Allow arrows to be visible outside container */
+#billboard,
+.product-carousel {
+  overflow: visible !important;
+}
+
+#billboard .container,
+.product-carousel .container {
+  overflow: visible;
+}
+
+/* Fix for image zoom effect */
+.image-zoom-effect {
+  overflow: hidden;
+}
+
+.image-zoom-effect img {
+  transition: transform 0.3s ease;
+}
+
+.image-zoom-effect:hover img {
+  transform: scale(1.05);
+}
+
+/* Navigation arrows positioning - Outside the container */
+.icon-arrow {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  z-index: 10;
+  cursor: pointer;
+  background: white;
+  width: 50px;
+  height: 50px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+  transition: all 0.3s ease;
+  border: 1px solid #e0e0e0;
+}
+
+.icon-arrow:hover {
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+  transform: translateY(-50%) scale(1.1);
+  background: #f8f8f8;
+}
+
+.icon-arrow svg {
+  color: #000;
+}
+
+/* Position arrows outside the swiper container */
+.icon-arrow-left {
+  left: -70px;
+}
+
+.icon-arrow-right {
+  right: -70px;
+}
+
+/* For smaller screens, keep arrows inside but with transparency */
+@media (max-width: 1400px) {
+  .icon-arrow-left {
+    left: 10px;
+  }
+  
+  .icon-arrow-right {
+    right: 10px;
+  }
+  
+  .icon-arrow {
+    background: rgba(255, 255, 255, 0.9);
+  }
+}
+
+/* Hide arrows on very small screens to avoid overlap */
+@media (max-width: 768px) {
+  .icon-arrow {
+    display: none;
+  }
+}
+
+/* Pagination styles */
+.swiper-pagination {
+  position: relative;
+  margin-top: 20px;
+  text-align: center;
+}
+
+.swiper-pagination-bullet {
+  width: 12px;
+  height: 12px;
+  background: #000;
+  opacity: 0.3;
+  margin: 0 5px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.swiper-pagination-bullet-active {
+  opacity: 1;
+  background: #000;
+}
+
+/* Product carousel specific styles */
+.product-swiper {
+  padding-left: 80px;
+  padding-right: 80px;
+  padding-bottom: 50px;
+  position: relative;
+}
+
+.product-swiper .swiper {
+  position: static;
+}
+
+.product-swiper .swiper-slide {
+  height: auto;
+}
+
+/* Center arrows on the product images */
+.product-swiper .icon-arrow {
+  top: 50%;
+  margin-top: -50px;
+}
+
+/* Remove padding on smaller screens */
+@media (max-width: 1400px) {
+  .product-swiper {
+    padding-left: 0;
+    padding-right: 0;
+  }
+  
+  .product-swiper .icon-arrow {
+    margin-top: -30px;
+  }
+}
+
+/* Testimonial swiper */
+.testimonial-swiper .swiper-slide {
+  padding: 20px;
+}
+
+/* Main hero swiper */
+.main-swiper {
+  padding-bottom: 50px;
+  padding-left: 80px;
+  padding-right: 80px;
+  width: 100%;
+  margin: 0 auto;
+  position: relative;
+}
+
+.main-swiper .swiper {
+  position: static;
+}
+
+.main-swiper .swiper-slide {
+  width: auto;
+}
+
+.main-swiper .banner-item {
+  width: 100%;
+  height: 100%;
+}
+
+.main-swiper .image-holder {
+  width: 100%;
+  height: auto;
+  overflow: hidden;
+}
+
+/* Center arrows on the image portion */
+.main-swiper .icon-arrow {
+  top: 50%;
+  margin-top: -70px;
+}
+
+/* Remove padding on smaller screens */
+@media (max-width: 1400px) {
+  .main-swiper {
+    padding-left: 0;
+    padding-right: 0;
+  }
+  
+  .main-swiper .icon-arrow {
+    margin-top: -40px;
+  }
+}
+
+/* Ensure slides are visible */
+.swiper-slide {
+  opacity: 1 !important;
+  visibility: visible !important;
+}
+
+/* Fix for Bootstrap conflicts */
+.swiper .row {
+  margin: 0;
+}
+
+.swiper [class*="col-"] {
+  padding: 0;
+}
+
+/* Prevent Bootstrap row from affecting swiper */
+#billboard .row,
+.product-carousel .row {
+  margin-left: 0;
+  margin-right: 0;
+}
+
+#billboard .col-12,
+.product-carousel .col-12 {
+  padding-left: 0;
+  padding-right: 0;
+}
+
+/* Ensure slides maintain minimum width */
+.swiper-slide {
+  min-width: 0;
+  flex-basis: auto;
+}
+
+/* Better image rendering */
+.banner-item img,
+.product-item img {
+  max-width: 100%;
+  height: auto;
+  object-fit: cover;
+}
