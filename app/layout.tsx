@@ -20,7 +20,7 @@ const marcellus = Marcellus({
 });
 
 export const metadata: Metadata = {
-  title: "Kaira - Fashion Store",
+  title: "swastika - Fashion Store",
   description: "Bootstrap 5 Fashion Store HTML CSS Template",
   keywords: "ecommerce,fashion,store",
   icons: {

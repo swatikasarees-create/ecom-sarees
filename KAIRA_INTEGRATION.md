@@ -1,7 +1,7 @@
-# Kaira Template Integration - Next.js
+# swastika Template Integration - Next.js
 
 ## Overview
-Successfully integrated the Kaira Bootstrap 5 Fashion Store template into Next.js 16 with React 19.
+Successfully integrated the swastika Bootstrap 5 Fashion Store template into Next.js 16 with React 19.
 
 ## What Was Done
 
@@ -83,7 +83,7 @@ ecom/
 - **Google Fonts** - Jost & Marcellus fonts
 
 ### 5. Styling Approach
-- Original Kaira CSS preserved in `/public/style.css`
+- Original swastika CSS preserved in `/public/style.css`
 - Bootstrap 5 for grid and utilities
 - Custom CSS for animations and effects
 - Responsive design with mobile-first approach
@@ -172,4 +172,4 @@ Navigate to `http://localhost:3000`
 - Mobile browsers (iOS Safari, Chrome Mobile)
 
 ## License
-Original Kaira template by TemplatesJungle
+Original swastika template by TemplatesJungle

@@ -9,63 +9,60 @@ export default function Categories() {
           <div className="row">
             <div className="col-md-4">
               <div className="cat-item image-zoom-effect">
-                <div className="image-holder">
-                  <Link href="/">
+                <div className="image-holder position-relative" style={{ height: '500px', overflow: 'hidden' }}>
+                  <Link href="/sarees?type=designer">
                     <Image 
                       src="/images/cat-item1.jpg" 
-                      alt="categories" 
-                      className="product-image img-fluid" 
-                      width={500} 
-                      height={700}
-                      style={{ width: '100%', height: 'auto' }}
+                      alt="Designer Sarees" 
+                      className="product-image" 
+                      fill
+                      style={{ objectFit: 'cover' }}
                     />
                   </Link>
                 </div>
                 <div className="category-content">
                   <div className="product-button">
-                    <Link href="/" className="btn btn-common text-uppercase">Shop for men</Link>
+                    <Link href="/sarees?type=designer" className="btn btn-common text-uppercase">Designer Sarees</Link>
                   </div>
                 </div>
               </div>
             </div>
             <div className="col-md-4">
               <div className="cat-item image-zoom-effect">
-                <div className="image-holder">
-                  <Link href="/">
+                <div className="image-holder position-relative" style={{ height: '500px', overflow: 'hidden' }}>
+                  <Link href="/sarees?type=silk">
                     <Image 
                       src="/images/cat-item2.jpg" 
-                      alt="categories" 
-                      className="product-image img-fluid" 
-                      width={500} 
-                      height={700}
-                      style={{ width: '100%', height: 'auto' }}
+                      alt="Silk Sarees" 
+                      className="product-image" 
+                      fill
+                      style={{ objectFit: 'cover' }}
                     />
                   </Link>
                 </div>
                 <div className="category-content">
                   <div className="product-button">
-                    <Link href="/" className="btn btn-common text-uppercase">Shop for women</Link>
+                    <Link href="/sarees?type=silk" className="btn btn-common text-uppercase">Silk Sarees</Link>
                   </div>
                 </div>
               </div>
             </div>
             <div className="col-md-4">
               <div className="cat-item image-zoom-effect">
-                <div className="image-holder">
-                  <Link href="/">
+                <div className="image-holder position-relative" style={{ height: '500px', overflow: 'hidden' }}>
+                  <Link href="/sarees?type=wedding">
                     <Image 
                       src="/images/cat-item3.jpg" 
-                      alt="categories" 
-                      className="product-image img-fluid" 
-                      width={500} 
-                      height={700}
-                      style={{ width: '100%', height: 'auto' }}
+                      alt="Wedding Sarees" 
+                      className="product-image" 
+                      fill
+                      style={{ objectFit: 'cover' }}
                     />
                   </Link>
                 </div>
                 <div className="category-content">
                   <div className="product-button">
-                    <Link href="/" className="btn btn-common text-uppercase">Shop accessories</Link>
+                    <Link href="/sarees?type=wedding" className="btn btn-common text-uppercase">Wedding Sarees</Link>
                   </div>
                 </div>
               </div>

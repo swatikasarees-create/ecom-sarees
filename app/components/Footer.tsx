@@ -138,9 +138,8 @@ export default function Footer() {
               </div>
             </div>
             <div className="col-md-6 text-end">
-              <p>© Copyright 2022 Kaira. All rights reserved. Design by <a href="https://templatesjungle.com"
-                  target="_blank">TemplatesJungle</a> Distribution By <a href="https://themewagon.com"
-                target="_blank">ThemeWagon</a></p>
+              <p>© Copyright 2026 Krishna Infotech.<br/> All rights reserved. Design by <a href="https://templatesjungle.com"
+                  target="_blank">Krishna Infotech</a> </p>
             </div>
           </div>
         </div>

@@ -10,7 +10,7 @@ import 'swiper/css/pagination';
 import 'swiper/css/navigation';
 
 interface Product {
-  id: number;
+  id: number | string;
   name: string;
   price: string;
   image: string;
@@ -28,7 +28,7 @@ export default function ProductCarousel({ title, products, sectionId }: ProductC
       <div className="container">
         <div className="d-flex flex-wrap justify-content-between align-items-center mt-5 mb-3">
           <h4 className="text-uppercase">{title}</h4>
-          <Link href="/" className="btn-link">View All Products</Link>
+          <Link href="/sarees" className="btn-link">View All Products</Link>
         </div>
         <div className="row">
           <div className="col-12">
@@ -63,27 +63,26 @@ export default function ProductCarousel({ title, products, sectionId }: ProductC
             {products.map((product) => (
               <SwiperSlide key={product.id}>
                 <div className="product-item image-zoom-effect link-effect">
-                  <div className="image-holder position-relative">
-                    <Link href="/">
+                  <div className="image-holder position-relative" style={{ height: '450px', overflow: 'hidden' }}>
+                    <Link href="/sarees">
                       <Image 
                         src={product.image} 
                         alt={product.name} 
-                        className="product-image img-fluid" 
-                        width={400} 
-                        height={500}
-                        style={{ width: '100%', height: 'auto' }}
+                        className="product-image" 
+                        fill
+                        style={{ objectFit: 'cover' }}
                       />
                     </Link>
-                    <Link href="/" className="btn-icon btn-wishlist">
+                    <Link href="/sarees" className="btn-icon btn-wishlist">
                       <svg width="24" height="24" viewBox="0 0 24 24">
                         <use xlinkHref="#heart"></use>
                       </svg>
                     </Link>
                     <div className="product-content">
                       <h5 className="text-uppercase fs-5 mt-3">
-                        <Link href="/">{product.name}</Link>
+                        <Link href="/sarees">{product.name}</Link>
                       </h5>
-                      <Link href="#" className="text-decoration-none" data-after="Add to cart">
+                      <Link href="/sarees" className="text-decoration-none" data-after="Add to cart">
                         <span>{product.price}</span>
                       </Link>
                     </div>
