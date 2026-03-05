@@ -3,14 +3,14 @@
 import Image from 'next/image';
 import Link from 'next/link';
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { getProductImageByHash } from '../lib/productImage';
 
-const instaImg = (hash: string) =>
-  `https://instasize.com/api/image/${hash}.jpeg`;
+const instaImg = (hash: string) => getProductImageByHash(hash);
 
 const banners = [
   {
     id: 1,
-    href: '/sarees/7',
+    href: '/checkout?productId=7&product=Cream%20Saree%20%E2%80%93%20Pink%20Border',
     src: instaImg('ba76809e38182a59fc059fd1b5ff8d54fbef1671671d7dc2d45e60da014280e0'),
     alt: 'Cream Saree with Vibrant Pink Border',
     name: 'Cream Saree – Pink Border',
@@ -19,7 +19,7 @@ const banners = [
   },
   {
     id: 2,
-    href: '/sarees/5',
+    href: '/checkout?productId=5&product=Net%20Embellished%20Saree',
     src: instaImg('46a257b9b9f758da7849f836bf71346d414778c4382aac9c626a44c1c91301b9'),
     alt: 'Net Embellished Saree with Mirror Work',
     name: 'Net Embellished Saree',
@@ -28,7 +28,7 @@ const banners = [
   },
   {
     id: 3,
-    href: '/sarees/40',
+    href: '/checkout?productId=40&product=Patola%20Silk%20Saree',
     src: instaImg('d572b2ddeebc5c37c8eb4c63deb69e10c3543589c62374ec45558d4217058267'),
     alt: 'Patola Silk Saree',
     name: 'Patola Silk Saree',
@@ -37,7 +37,7 @@ const banners = [
   },
   {
     id: 4,
-    href: '/sarees/31',
+    href: '/checkout?productId=31&product=Pearl%20Work%20Net%20Saree',
     src: instaImg('b412ff6e2520e71391d64b0560de436686b29db2cb76bd68e417bbda70211003'),
     alt: 'Pearl Work Net Saree',
     name: 'Pearl Work Net Saree',
@@ -46,7 +46,7 @@ const banners = [
   },
   {
     id: 5,
-    href: '/sarees/18',
+    href: '/checkout?productId=18&product=Tissue%20Silk%20Saree',
     src: instaImg('33b3c5ac84e7f428324c6d67f6a7f0732598ee87e26a0b165e594c3932725ac9'),
     alt: 'Tissue Silk Saree',
     name: 'Tissue Silk Saree',
@@ -55,7 +55,7 @@ const banners = [
   },
   {
     id: 6,
-    href: '/sarees/35',
+    href: '/checkout?productId=35&product=Stone%20Work%20Net%20Saree',
     src: instaImg('8f984c7487be2c119a063599ec22580bfdb5b1a3476cd89793531fe8ddc9c3a6'),
     alt: 'Stone Work Net Saree',
     name: 'Stone Work Net Saree',

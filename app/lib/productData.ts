@@ -1,3 +1,5 @@
+import { getProductImageByHash } from './productImage';
+
 export interface Product {
   id: string;
   name: string;
@@ -12,9 +14,7 @@ export interface Product {
   description?: string;
 }
 
-// Direct image URLs from InstaSize CDN
-const instaImg = (hash: string) =>
-  `https://instasize.com/api/image/${hash}.jpeg`;
+const instaImg = (hash: string) => getProductImageByHash(hash);
 
 export const products: Product[] = [
   // ── Kurta Sets & Suit Sets ──────────────────────────────────────

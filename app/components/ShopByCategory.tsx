@@ -3,39 +3,41 @@
 import Image from 'next/image';
 import Link from 'next/link';
 import { useRef } from 'react';
+import { getProductImageByHash } from '../lib/productImage';
 
 export default function ShopByCategory() {
   const scrollContainerRef = useRef<HTMLDivElement>(null);
+  const instaImg = (hash: string) => getProductImageByHash(hash);
 
   const categories = [
     {
       id: 1,
       name: 'Wedding Sarees',
-      image: '/images/banner-image-1.jpg',
+      image: instaImg('ba76809e38182a59fc059fd1b5ff8d54fbef1671671d7dc2d45e60da014280e0'),
       link: '/sarees?type=wedding'
     },
     {
       id: 2,
       name: 'Georgette Sarees',
-      image: '/images/banner-image-5.jpg',
+      image: instaImg('46a257b9b9f758da7849f836bf71346d414778c4382aac9c626a44c1c91301b9'),
       link: '/sarees?type=georgette'
     },
     {
       id: 3,
       name: 'Casual Sarees',
-      image: '/images/banner-image-3.jpg',
+      image: instaImg('3876d6356902934f89c32ff17a01069cbecd69a3f5ed463a3e3d2cf989ee847d'),
       link: '/sarees?type=cotton'
     },
     {
       id: 4,
       name: 'Haldi Sarees',
-      image: '/images/banner-image-4.jpg',
+      image: instaImg('15ff321335eca96ad3ae10207dc3e64dc57578cc932fa81e1fe20de55de7de1d'),
       link: '/sarees?type=silk'
     },
    {
       id: 5,
       name: 'Partywear Sarees',
-      image: '/images/banner-image-2.jpg',
+      image: instaImg('5cc317d0105e936b6b2fa225210e55064f5cf16bd6c0137a4572165ee7c27d15'),
       link: '/sarees?type=party'
     }
   ];
@@ -201,8 +203,9 @@ export default function ShopByCategory() {
                   src={category.image}
                   alt={category.name}
                   fill
-                  style={{ objectFit: 'contain', objectPosition: 'center' }}
+                  style={{ objectFit: 'cover', objectPosition: 'center top' }}
                   sizes="(max-width: 768px) 150px, 220px"
+                  unoptimized
                 />
               </div>
 

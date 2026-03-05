@@ -5,6 +5,7 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { useSearchParams } from 'next/navigation';
 import { products, Product, getUniqueColors, getUniqueCategories, getUniqueFabrics, getUniqueCollections } from '../lib/productData';
+import { addToCart, addToWishlist } from '../lib/commerceStore';
 
 export default function SareesContent() {
   const searchParams = useSearchParams();
@@ -111,6 +112,24 @@ export default function SareesContent() {
     setSelectedCollections([]);
     setAvailability('all');
     setPriceRange([0, 5000]);
+  };
+
+  const handleAddToCart = (product: Product) => {
+    addToCart({
+      id: String(product.id),
+      name: product.name,
+      price: product.price,
+      image: product.image,
+    });
+  };
+
+  const handleAddToWishlist = (product: Product) => {
+    addToWishlist({
+      id: String(product.id),
+      name: product.name,
+      price: product.price,
+      image: product.image,
+    });
   };
 
   return (
@@ -376,6 +395,30 @@ export default function SareesContent() {
                             ₹{product.originalPrice.toLocaleString('en-IN')}
                           </span>
                         )}
+                      </div>
+                      <div className="d-flex gap-2 mt-3">
+                        <button
+                          type="button"
+                          className="btn btn-sm btn-dark flex-fill"
+                          onClick={(e) => {
+                            e.preventDefault();
+                            e.stopPropagation();
+                            handleAddToCart(product);
+                          }}
+                        >
+                          Add to Cart
+                        </button>
+                        <button
+                          type="button"
+                          className="btn btn-sm btn-outline-dark flex-fill"
+                          onClick={(e) => {
+                            e.preventDefault();
+                            e.stopPropagation();
+                            handleAddToWishlist(product);
+                          }}
+                        >
+                          Wishlist
+                        </button>
                       </div>
                     </div>
                   </Link>

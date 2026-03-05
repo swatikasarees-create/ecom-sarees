@@ -3,6 +3,8 @@
 import { useState } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
+import { getProductImageByHash } from '../lib/productImage';
+import { addToCart, addToWishlist } from '../lib/commerceStore';
 
 interface Product {
   id: number;
@@ -13,8 +15,7 @@ interface Product {
   link: string;
 }
 
-const instaImg = (hash: string) =>
-  `https://instasize.com/api/image/${hash}.jpeg`;
+const instaImg = (hash: string) => getProductImageByHash(hash);
 
 export default function Categories() {
   const [activeTab, setActiveTab] = useState<'bestSellers' | 'newArrivals'>('bestSellers');
@@ -74,6 +75,24 @@ export default function Categories() {
   ];
 
   const displayProducts = activeTab === 'bestSellers' ? bestSellers : newArrivals;
+
+  const addProductToCart = (product: Product) => {
+    addToCart({
+      id: String(product.id),
+      name: product.name,
+      image: product.image,
+      price: product.price,
+    });
+  };
+
+  const addProductToWishlist = (product: Product) => {
+    addToWishlist({
+      id: String(product.id),
+      name: product.name,
+      image: product.image,
+      price: product.price,
+    });
+  };
 
   return (
     <section className="categories py-4 py-md-5" style={{ background: 'linear-gradient(135deg, #fafafa 0%, #f5f5f5 100%)' }}>
@@ -270,6 +289,30 @@ export default function Categories() {
                       }}
                     >
                       {Math.round(((product.originalPrice - product.price) / product.originalPrice) * 100)}% OFF
+                    </div>
+                    <div className="d-flex gap-2 mt-3">
+                      <button
+                        type="button"
+                        className="btn btn-sm btn-dark flex-fill"
+                        onClick={(e) => {
+                          e.preventDefault();
+                          e.stopPropagation();
+                          addProductToCart(product);
+                        }}
+                      >
+                        Add to Cart
+                      </button>
+                      <button
+                        type="button"
+                        className="btn btn-sm btn-outline-dark flex-fill"
+                        onClick={(e) => {
+                          e.preventDefault();
+                          e.stopPropagation();
+                          addProductToWishlist(product);
+                        }}
+                      >
+                        Wishlist
+                      </button>
                     </div>
                   </div>
                 </div>

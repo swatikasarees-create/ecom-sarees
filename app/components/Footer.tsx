@@ -356,7 +356,7 @@ export default function Footer() {
             }}>
               Our Store
             </h5>
-            <p style={{ 
+            {/* <p style={{ 
               fontSize: 'clamp(0.85rem, 2vw, 0.95rem)', 
               lineHeight: '1.7',
               color: 'rgba(255, 255, 255, 0.9)',
@@ -366,20 +366,35 @@ export default function Footer() {
               123 Fashion Street, Saree Plaza<br />
               Mumbai, Maharashtra 400001<br />
               India
-            </p>
+            </p> */}
             <p style={{ 
               fontSize: 'clamp(0.85rem, 2vw, 0.95rem)', 
               color: 'rgba(255, 255, 255, 0.9)',
               marginBottom: '8px'
             }}>
-              <strong>Email:</strong> <a href="mailto:info@swatikasarees.com" style={{ color: 'white', textDecoration: 'none' }}>info@swatikasarees.com</a>
+              <strong>Email:</strong> <a href="mailto:swatikasarees@gmail.com" style={{ color: 'white', textDecoration: 'none' }}>swatikasarees@gmail.com</a>
             </p>
             <p style={{ 
               fontSize: 'clamp(0.85rem, 2vw, 0.95rem)', 
               color: 'rgba(255, 255, 255, 0.9)',
               marginBottom: '0'
             }}>
-              <strong>Phone:</strong> <a href="tel:+911234567890" style={{ color: 'white', textDecoration: 'none' }}>+91 123-456-7890</a>
+              <strong>Phone:</strong> <a href="tel:+918130033637" style={{ color: 'white', textDecoration: 'none' }}>+91 81300 33637</a>
+            </p>
+            <p style={{ 
+              fontSize: 'clamp(0.85rem, 2vw, 0.95rem)', 
+              color: 'rgba(255, 255, 255, 0.9)',
+              marginBottom: '0'
+            }}>
+              
+              <a
+                href="https://wa.me/918130033637"
+                target="_blank"
+                rel="noopener noreferrer"
+                style={{ color: 'white', textDecoration: 'none', paddingTop: '10px' }}
+              >
+                WhatsApp
+              </a>
             </p>
           </div>
         </div>

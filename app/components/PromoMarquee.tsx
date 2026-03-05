@@ -4,11 +4,11 @@ export default function PromoMarquee() {
   const promos = [
     {
       icon: '🚚',
-      text: 'Worldwide Delivery'
+      text: 'Cash on Delivery Available'
     },
     {
       icon: '📱',
-      text: 'WhatsApp: +91 6359561631'
+      text: 'WhatsApp: +91 81300 33637'
     },
     {
       icon: '✨',

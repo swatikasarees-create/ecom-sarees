@@ -4,6 +4,7 @@ import { Swiper, SwiperSlide } from 'swiper/react';
 import { Pagination, Navigation } from 'swiper/modules';
 import Image from 'next/image';
 import Link from 'next/link';
+import { addToCart, addToWishlist } from '../lib/commerceStore';
 
 import 'swiper/css';
 import 'swiper/css/pagination';
@@ -23,6 +24,11 @@ interface ProductCarouselProps {
 }
 
 export default function ProductCarousel({ title, products, sectionId }: ProductCarouselProps) {
+  const parsePrice = (price: string) => {
+    const numeric = Number(price.replace(/[^\d]/g, ''));
+    return Number.isFinite(numeric) ? numeric : 0;
+  };
+
   return (
     <section id={sectionId} className="product-carousel py-4 py-md-5 position-relative overflow-hidden" style={{ background: '#fafafa' }}>
       <div className="container">
@@ -155,6 +161,16 @@ export default function ProductCarousel({ title, products, sectionId }: ProductC
                     onMouseLeave={(e) => {
                       e.currentTarget.style.background = 'white';
                       e.currentTarget.style.transform = 'scale(1)';
+                    }}
+                    onClick={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      addToWishlist({
+                        id: String(product.id),
+                        name: product.name,
+                        image: product.image,
+                        price: parsePrice(product.price),
+                      });
                     }}>
                       <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                         <use xlinkHref="#heart"></use>
@@ -209,6 +225,22 @@ export default function ProductCarousel({ title, products, sectionId }: ProductC
                         View Details →
                       </Link>
                     </div>
+                    <button
+                      type="button"
+                      className="btn btn-sm btn-dark w-100 mt-3"
+                      onClick={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        addToCart({
+                          id: String(product.id),
+                          name: product.name,
+                          image: product.image,
+                          price: parsePrice(product.price),
+                        });
+                      }}
+                    >
+                      Add to Cart
+                    </button>
                   </div>
                 </div>
               </SwiperSlide>

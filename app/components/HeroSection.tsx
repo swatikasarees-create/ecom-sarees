@@ -4,14 +4,14 @@ import { Swiper, SwiperSlide } from 'swiper/react';
 import { Pagination, Navigation } from 'swiper/modules';
 import Image from 'next/image';
 import Link from 'next/link';
+import { getProductImageByHash } from '../lib/productImage';
 
 // Import Swiper styles
 import 'swiper/css';
 import 'swiper/css/pagination';
 import 'swiper/css/navigation';
 
-const instaImg = (hash: string) =>
-  `https://instasize.com/api/image/${hash}.jpeg`;
+const instaImg = (hash: string) => getProductImageByHash(hash);
 
 export default function HeroSection() {
   return (
@@ -70,7 +70,7 @@ export default function HeroSection() {
                     </h5>
                     <p className="d-none d-md-block" style={{ fontSize: 'clamp(0.85rem, 2vw, 1rem)' }}>Classic cream base meets a striking pink border and ornate motif detailing—ideal for wedding rituals and special occasions. ₹11,000</p>
                     <div className="btn-left">
-                      <Link href="/sarees/7" className="btn-link text-uppercase item-anchor text-decoration-none" style={{ fontSize: 'clamp(0.75rem, 2vw, 1rem)' }}>Shop Now</Link>
+                      <Link href="/checkout?productId=7&product=Cream%20Saree%20%E2%80%93%20Pink%20Border" className="btn-link text-uppercase item-anchor text-decoration-none" style={{ fontSize: 'clamp(0.75rem, 2vw, 1rem)' }}>Shop Now</Link>
                     </div>
                   </div>
                 </div>
@@ -95,7 +95,7 @@ export default function HeroSection() {
                     </h5>
                     <p className="d-none d-md-block" style={{ fontSize: 'clamp(0.85rem, 2vw, 1rem)' }}>Stunning Patola silk saree with intricate traditional patterns, vibrant red base and contrasting golden border. ₹6,000</p>
                     <div className="btn-left">
-                      <Link href="/sarees/40" className="btn-link text-uppercase item-anchor text-decoration-none" style={{ fontSize: 'clamp(0.75rem, 2vw, 1rem)' }}>Shop Now</Link>
+                      <Link href="/checkout?productId=40&product=Patola%20Silk%20Saree" className="btn-link text-uppercase item-anchor text-decoration-none" style={{ fontSize: 'clamp(0.75rem, 2vw, 1rem)' }}>Shop Now</Link>
                     </div>
                   </div>
                 </div>
@@ -120,7 +120,7 @@ export default function HeroSection() {
                     </h5>
                     <p className="d-none d-md-block" style={{ fontSize: 'clamp(0.85rem, 2vw, 1rem)' }}>Luxurious tissue silk saree with a graceful silhouette and subtle natural sheen—perfect for weddings and festive celebrations. ₹4,999</p>
                     <div className="btn-left">
-                      <Link href="/sarees/18" className="btn-link text-uppercase item-anchor text-decoration-none" style={{ fontSize: 'clamp(0.75rem, 2vw, 1rem)' }}>Shop Now</Link>
+                      <Link href="/checkout?productId=18&product=Tissue%20Silk%20Saree" className="btn-link text-uppercase item-anchor text-decoration-none" style={{ fontSize: 'clamp(0.75rem, 2vw, 1rem)' }}>Shop Now</Link>
                     </div>
                   </div>
                 </div>
@@ -144,7 +144,7 @@ export default function HeroSection() {
                     </h5>
                     <p className="d-none d-md-block" style={{ fontSize: 'clamp(0.85rem, 2vw, 1rem)' }}>Seafoam saree with detailed embroidered border and sequin work for a refined shine. Sophisticated for weddings and evening celebrations. ₹8,000</p>
                     <div className="btn-left">
-                      <Link href="/sarees/5" className="btn-link text-uppercase item-anchor text-decoration-none" style={{ fontSize: 'clamp(0.75rem, 2vw, 1rem)' }}>Shop Now</Link>
+                      <Link href="/checkout?productId=5&product=Net%20Embellished%20Saree" className="btn-link text-uppercase item-anchor text-decoration-none" style={{ fontSize: 'clamp(0.75rem, 2vw, 1rem)' }}>Shop Now</Link>
                     </div>
                   </div>
                 </div>
@@ -168,7 +168,7 @@ export default function HeroSection() {
                     </h5>
                     <p className="d-none d-md-block" style={{ fontSize: 'clamp(0.85rem, 2vw, 1rem)' }}>Rich rust-orange saree with bandhani-inspired pattern and standout metallic pallu—perfect for cultural events and wedding functions. ₹4,500</p>
                     <div className="btn-left">
-                      <Link href="/sarees/6" className="btn-link text-uppercase item-anchor text-decoration-none" style={{ fontSize: 'clamp(0.75rem, 2vw, 1rem)' }}>Shop Now</Link>
+                      <Link href="/checkout?productId=6&product=Rust%20Orange%20Silk%20Saree" className="btn-link text-uppercase item-anchor text-decoration-none" style={{ fontSize: 'clamp(0.75rem, 2vw, 1rem)' }}>Shop Now</Link>
                     </div>
                   </div>
                 </div>
@@ -192,7 +192,7 @@ export default function HeroSection() {
                     </h5>
                     <p className="d-none d-md-block" style={{ fontSize: 'clamp(0.85rem, 2vw, 1rem)' }}>Graceful net saree adorned with intricate stone work and elegant detailing—designed for luxurious sparkle at weddings and receptions. ₹11,000</p>
                     <div className="btn-left">
-                      <Link href="/sarees/35" className="btn-link text-uppercase item-anchor text-decoration-none" style={{ fontSize: 'clamp(0.75rem, 2vw, 1rem)' }}>Shop Now</Link>
+                      <Link href="/checkout?productId=35&product=Stone%20Work%20Net%20Saree" className="btn-link text-uppercase item-anchor text-decoration-none" style={{ fontSize: 'clamp(0.75rem, 2vw, 1rem)' }}>Shop Now</Link>
                     </div>
                   </div>
                 </div>

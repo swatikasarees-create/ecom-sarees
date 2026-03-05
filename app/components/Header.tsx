@@ -2,12 +2,41 @@
 
 import Link from 'next/link';
 import Image from 'next/image';
-import { useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
+import {
+  getCart,
+  getStoreEventName,
+  getWishlist,
+  removeFromCart,
+  type CartItem,
+} from '../lib/commerceStore';
 
 export default function Header() {
   const [isOffcanvasOpen, setIsOffcanvasOpen] = useState(false);
   const [isCartOpen, setIsCartOpen] = useState(false);
   const [isSearchOpen, setIsSearchOpen] = useState(false);
+  const [cartItems, setCartItems] = useState<CartItem[]>([]);
+  const [wishlistCount, setWishlistCount] = useState(0);
+
+  useEffect(() => {
+    const syncStore = () => {
+      setCartItems(getCart());
+      setWishlistCount(getWishlist().length);
+    };
+    syncStore();
+    const eventName = getStoreEventName();
+    window.addEventListener(eventName, syncStore);
+    return () => window.removeEventListener(eventName, syncStore);
+  }, []);
+
+  const cartCount = useMemo(
+    () => cartItems.reduce((sum, item) => sum + item.qty, 0),
+    [cartItems]
+  );
+  const cartTotal = useMemo(
+    () => cartItems.reduce((sum, item) => sum + item.price * item.qty, 0),
+    [cartItems]
+  );
 
   return (
     <>
@@ -98,36 +127,43 @@ export default function Header() {
           <div className="order-md-last">
             <h4 className="d-flex justify-content-between align-items-center mb-3">
               <span className="text-primary">Your cart</span>
-              <span className="badge bg-primary rounded-pill">3</span>
+              <span className="badge bg-primary rounded-pill">{cartCount}</span>
             </h4>
             <ul className="list-group mb-3">
-              <li className="list-group-item d-flex justify-content-between lh-sm">
-                <div>
-                  <h6 className="my-0">Designer Silk Saree</h6>
-                  <small className="text-body-secondary">Wine Red with Gold Border</small>
-                </div>
-                <span className="text-body-secondary">₹2,903</span>
-              </li>
-              <li className="list-group-item d-flex justify-content-between lh-sm">
-                <div>
-                  <h6 className="my-0">Cotton Saree</h6>
-                  <small className="text-body-secondary">Pastel Yellow Floral</small>
-                </div>
-                <span className="text-body-secondary">₹1,500</span>
-              </li>
-              <li className="list-group-item d-flex justify-content-between lh-sm">
-                <div>
-                  <h6 className="my-0">Georgette Saree</h6>
-                  <small className="text-body-secondary">Black Party Wear</small>
-                </div>
-                <span className="text-body-secondary">₹1,800</span>
-              </li>
+              {cartItems.length === 0 && (
+                <li className="list-group-item text-center text-muted">
+                  No products in cart.
+                </li>
+              )}
+              {cartItems.map((item) => (
+                <li key={item.id} className="list-group-item d-flex justify-content-between lh-sm">
+                  <div>
+                    <h6 className="my-0">{item.name}</h6>
+                    <small className="text-body-secondary">Qty: {item.qty}</small>
+                    <div>
+                      <button
+                        type="button"
+                        className="btn btn-link p-0 text-danger text-decoration-none"
+                        style={{ fontSize: '0.82rem' }}
+                        onClick={() => removeFromCart(item.id)}
+                      >
+                        Remove
+                      </button>
+                    </div>
+                  </div>
+                  <span className="text-body-secondary">
+                    ₹{(item.price * item.qty).toLocaleString('en-IN')}
+                  </span>
+                </li>
+              ))}
               <li className="list-group-item d-flex justify-content-between">
                 <span>Total (INR)</span>
-                <strong>₹6,203</strong>
+                <strong>₹{cartTotal.toLocaleString('en-IN')}</strong>
               </li>
             </ul>
-            <button className="w-100 btn btn-primary btn-lg" type="submit">Continue to Checkout</button>
+            <Link className="w-100 btn btn-primary btn-lg" href="/cart" onClick={() => setIsCartOpen(false)}>
+              Open Cart
+            </Link>
           </div>
         </div>
       </div>
@@ -157,15 +193,25 @@ export default function Header() {
 
             {/* Mobile Icons - Right */}
             <div className="d-flex align-items-center gap-2" style={{ order: 3 }}>
-              <a href="#" className="d-flex align-items-center">
+              <Link href="/wishlist" className="d-flex align-items-center position-relative">
                 <svg width="20" height="20" viewBox="0 0 24 24">
                   <use xlinkHref="#heart"></use>
                 </svg>
-              </a>
-              <a href="#" className="d-flex align-items-center" onClick={(e) => { e.preventDefault(); setIsCartOpen(true); }}>
+                {wishlistCount > 0 && (
+                  <span className="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger">
+                    {wishlistCount}
+                  </span>
+                )}
+              </Link>
+              <a href="#" className="d-flex align-items-center position-relative" onClick={(e) => { e.preventDefault(); setIsCartOpen(true); }}>
                 <svg width="20" height="20" viewBox="0 0 24 24">
                   <use xlinkHref="#cart"></use>
                 </svg>
+                {cartCount > 0 && (
+                  <span className="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-dark">
+                    {cartCount}
+                  </span>
+                )}
               </a>
               <a href="#search" className="search-button d-flex align-items-center" onClick={(e) => { e.preventDefault(); setIsSearchOpen(!isSearchOpen); }}>
                 <svg width="20" height="20" viewBox="0 0 24 24">
@@ -257,13 +303,13 @@ export default function Header() {
           <div className="d-none d-lg-flex align-items-center ms-auto">
             <ul className="list-unstyled d-flex m-0 align-items-center gap-3">
               <li>
-                <a href="#" className="text-uppercase text-decoration-none text-dark" style={{ fontSize: '0.95rem', whiteSpace: 'nowrap' }}>
-                  Wishlist <span className="wishlist-count">(0)</span>
-                </a>
+                <Link href="/wishlist" className="text-uppercase text-decoration-none text-dark" style={{ fontSize: '0.95rem', whiteSpace: 'nowrap' }}>
+                  Wishlist <span className="wishlist-count">({wishlistCount})</span>
+                </Link>
               </li>
               <li>
                 <a href="#" className="text-uppercase text-decoration-none text-dark" onClick={(e) => { e.preventDefault(); setIsCartOpen(true); }} style={{ fontSize: '0.95rem', whiteSpace: 'nowrap', cursor: 'pointer' }}>
-                  Cart <span className="cart-count">(0)</span>
+                  Cart <span className="cart-count">({cartCount})</span>
                 </a>
               </li>
               <li className="search-box">
