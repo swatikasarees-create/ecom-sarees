@@ -3,11 +3,12 @@ import Image from 'next/image';
 export default function Instagram() {
   const instaImages = [
     '/images/insta-item1.jpg',
-    '/images/insta-item2.jpg',
+    '/images/insta-item5.jpg',
     '/images/insta-item3.jpg',
-    '/images/insta-item4.jpg',
+   
     '/images/insta-item5.jpg',
     '/images/insta-item6.jpg',
+    '/images/insta-item1.jpg',
   ];
 
   return (

@@ -19,8 +19,19 @@
   }
 }
 
+html {
+  overflow-x: clip;
+}
+
 body {
   background: var(--background);
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
+  overflow-x: clip;
+}
+
+/* Ensure sticky positioning works on all devices, especially mobile Safari */
+.sticky-header {
+  position: -webkit-sticky;
+  position: sticky;
 }

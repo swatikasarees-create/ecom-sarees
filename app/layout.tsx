@@ -20,8 +20,8 @@ const marcellus = Marcellus({
 });
 
 export const metadata: Metadata = {
-  title: "swastika - Fashion Store",
-  description: "Bootstrap 5 Fashion Store HTML CSS Template",
+  title: "swatika - Fashion Store",
+  description: "swatika - Timeless Elegance in Every Drape|Buy Online Sarees at Best Price | Best Sarees Online| Best Sarees in India ",
   keywords: "ecommerce,fashion,store",
   icons: {
     icon: "/favicon.ico",

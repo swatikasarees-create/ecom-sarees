@@ -133,97 +133,147 @@ export default function Header() {
       </div>
 
       {/* Navigation */}
-      <nav className="navbar navbar-expand-lg bg-light text-uppercase fs-6 p-3 border-bottom align-items-center">
+      <nav className="navbar navbar-expand-lg bg-white text-uppercase p-2 p-md-3 border-bottom sticky-header" style={{ position: 'sticky', top: 0, zIndex: 1020, backgroundColor: '#f8f9fa' }}>
         <div className="container-fluid">
-          <div className="row justify-content-between align-items-center w-100">
-            <div className="col-auto">
-              <Link className="navbar-brand d-flex align-items-center" href="/">
-                <Image 
-                  src="/images/SwatikaSarees.png" 
-                  alt="Swatika Sarees" 
-                  width={150} 
-                  height={50}
-                  priority
-                  className="logo"
-                  style={{ objectFit: 'contain', height: 'auto', maxHeight: '50px' }}
-                />
-              </Link>
+          {/* Mobile Layout: Hamburger | Logo | Icons */}
+          <div className="d-flex d-lg-none align-items-center justify-content-between w-100">
+            {/* Mobile Toggler - Left */}
+            <button className="navbar-toggler border-0 p-1" type="button" onClick={() => setIsOffcanvasOpen(!isOffcanvasOpen)} style={{ order: 1 }}>
+              <span className="navbar-toggler-icon"></span>
+            </button>
+
+            {/* Logo - Center */}
+            <Link className="navbar-brand mx-auto" href="/" style={{ order: 2 }}>
+              <Image 
+                src="/images/swatika/Swatika_logo.png" 
+                alt="Swatika Sarees" 
+                width={120} 
+                height={50}
+                priority
+                className="logo"
+                style={{ objectFit: 'contain', height: 'auto', maxHeight: '50px' }}
+              />
+            </Link>
+
+            {/* Mobile Icons - Right */}
+            <div className="d-flex align-items-center gap-2" style={{ order: 3 }}>
+              <a href="#" className="d-flex align-items-center">
+                <svg width="20" height="20" viewBox="0 0 24 24">
+                  <use xlinkHref="#heart"></use>
+                </svg>
+              </a>
+              <a href="#" className="d-flex align-items-center" onClick={(e) => { e.preventDefault(); setIsCartOpen(true); }}>
+                <svg width="20" height="20" viewBox="0 0 24 24">
+                  <use xlinkHref="#cart"></use>
+                </svg>
+              </a>
+              <a href="#search" className="search-button d-flex align-items-center" onClick={(e) => { e.preventDefault(); setIsSearchOpen(!isSearchOpen); }}>
+                <svg width="20" height="20" viewBox="0 0 24 24">
+                  <use xlinkHref="#search"></use>
+                </svg>
+              </a>
             </div>
+          </div>
 
-            <div className="col-auto">
-              <button className="navbar-toggler" type="button" onClick={() => setIsOffcanvasOpen(!isOffcanvasOpen)}>
-                <span className="navbar-toggler-icon"></span>
-              </button>
+          {/* Desktop Layout */}
+          {/* Logo - Left */}
+          <Link className="navbar-brand d-none d-lg-block" href="/">
+            <Image 
+              src="/images/swatika/Swatika_logo.png" 
+              alt="Swatika Sarees" 
+              width={150} 
+              height={60}
+              priority
+              className="logo"
+              style={{ objectFit: 'contain', height: 'auto', maxHeight: '60px' }}
+            />
+          </Link>
 
-              <div className={`offcanvas offcanvas-end ${isOffcanvasOpen ? 'show' : ''}`} tabIndex={-1} id="offcanvasNavbar">
-                <div className="offcanvas-header">
-                  <h5 className="offcanvas-title" id="offcanvasNavbarLabel">Menu</h5>
-                  <button type="button" className="btn-close text-reset" onClick={() => setIsOffcanvasOpen(false)}></button>
-                </div>
+          {/* Desktop Navigation Menu - Center */}
+          <div className="navbar-collapse justify-content-center d-none d-lg-flex">
+            <ul className="navbar-nav gap-4">
+              <li className="nav-item">
+                <Link className="nav-link active" href="/" style={{ fontSize: '1rem' }}>Home</Link>
+              </li>
+              <li className="nav-item">
+                <Link className="nav-link" href="/about" style={{ fontSize: '1rem' }}>About Us</Link>
+              </li>
+              <li className="nav-item dropdown">
+                <a className="nav-link dropdown-toggle" href="#" id="dropdownSarees" role="button" data-bs-toggle="dropdown" aria-expanded="false" style={{ fontSize: '1rem' }}>
+                  Sarees
+                </a>
+                <ul className="dropdown-menu" aria-labelledby="dropdownSarees">
+                  <li><Link className="dropdown-item" href="/sarees?type=designer">Designer Sarees</Link></li>
+                  <li><Link className="dropdown-item" href="/sarees?type=silk">Silk Sarees</Link></li>
+                  <li><Link className="dropdown-item" href="/sarees?type=cotton">Cotton Sarees</Link></li>
+                  <li><Link className="dropdown-item" href="/sarees?type=georgette">Georgette Sarees</Link></li>
+                  <li><Link className="dropdown-item" href="/sarees?type=chiffon">Chiffon Sarees</Link></li>
+                  <li><hr className="dropdown-divider" /></li>
+                  <li><Link className="dropdown-item" href="/sarees">View All Sarees</Link></li>
+                </ul>
+              </li>
+              <li className="nav-item">
+                <Link className="nav-link" href="/contact" style={{ fontSize: '1rem' }}>Contact</Link>
+              </li>
+            </ul>
+          </div>
 
-                <div className="offcanvas-body">
-                  <ul className="navbar-nav justify-content-end flex-grow-1 gap-1 gap-md-5 pe-3">
-                    <li className="nav-item">
-                      <Link className="nav-link active" href="/">Home</Link>
-                    </li>
-                    <li className="nav-item">
-                      <Link className="nav-link" href="/about">About Us</Link>
-                    </li>
-                    <li className="nav-item dropdown">
-                      <a className="nav-link dropdown-toggle" href="#" id="dropdownSarees" role="button" data-bs-toggle="dropdown" aria-expanded="false">
-                        Sarees
-                      </a>
-                      <ul className="dropdown-menu" aria-labelledby="dropdownSarees">
-                        <li><Link className="dropdown-item" href="/sarees?type=designer">Designer Sarees</Link></li>
-                        <li><Link className="dropdown-item" href="/sarees?type=silk">Silk Sarees</Link></li>
-                        <li><Link className="dropdown-item" href="/sarees?type=cotton">Cotton Sarees</Link></li>
-                        <li><Link className="dropdown-item" href="/sarees?type=georgette">Georgette Sarees</Link></li>
-                        <li><Link className="dropdown-item" href="/sarees?type=chiffon">Chiffon Sarees</Link></li>
-                        <li><hr className="dropdown-divider" /></li>
-                        <li><Link className="dropdown-item" href="/sarees">View All Sarees</Link></li>
-                      </ul>
-                    </li>
-                    <li className="nav-item">
-                      <Link className="nav-link" href="/contact">Contact</Link>
-                    </li>
+          {/* Mobile Offcanvas Menu */}
+          <div className={`offcanvas offcanvas-start d-lg-none ${isOffcanvasOpen ? 'show' : ''}`} tabIndex={-1} id="offcanvasNavbar">
+            <div className="offcanvas-header">
+              <h5 className="offcanvas-title" id="offcanvasNavbarLabel">Menu</h5>
+              <button type="button" className="btn-close text-reset" onClick={() => setIsOffcanvasOpen(false)}></button>
+            </div>
+            <div className="offcanvas-body">
+              <ul className="navbar-nav gap-1">
+                <li className="nav-item">
+                  <Link className="nav-link active" href="/" style={{ fontSize: 'clamp(0.85rem, 2vw, 1rem)' }}>Home</Link>
+                </li>
+                <li className="nav-item">
+                  <Link className="nav-link" href="/about" style={{ fontSize: 'clamp(0.85rem, 2vw, 1rem)' }}>About Us</Link>
+                </li>
+                <li className="nav-item dropdown">
+                  <a className="nav-link dropdown-toggle" href="#" id="dropdownSareesMobile" role="button" data-bs-toggle="dropdown" aria-expanded="false" style={{ fontSize: 'clamp(0.85rem, 2vw, 1rem)' }}>
+                    Sarees
+                  </a>
+                  <ul className="dropdown-menu" aria-labelledby="dropdownSareesMobile">
+                    <li><Link className="dropdown-item" href="/sarees?type=designer">Designer Sarees</Link></li>
+                    <li><Link className="dropdown-item" href="/sarees?type=silk">Silk Sarees</Link></li>
+                    <li><Link className="dropdown-item" href="/sarees?type=cotton">Cotton Sarees</Link></li>
+                    <li><Link className="dropdown-item" href="/sarees?type=georgette">Georgette Sarees</Link></li>
+                    <li><Link className="dropdown-item" href="/sarees?type=chiffon">Chiffon Sarees</Link></li>
+                    <li><hr className="dropdown-divider" /></li>
+                    <li><Link className="dropdown-item" href="/sarees">View All Sarees</Link></li>
                   </ul>
-                </div>
-              </div>
-            </div>
-
-            <div className="col-3 col-lg-auto">
-              <ul className="list-unstyled d-flex m-0">
-                <li className="d-none d-lg-block">
-                  <a href="#" className="text-uppercase mx-3">Wishlist <span className="wishlist-count">(0)</span></a>
                 </li>
-                <li className="d-none d-lg-block">
-                  <a href="#" className="text-uppercase mx-3" onClick={(e) => { e.preventDefault(); setIsCartOpen(true); }}>
-                    Cart <span className="cart-count">(0)</span>
-                  </a>
-                </li>
-                <li className="d-lg-none">
-                  <a href="#" className="mx-2">
-                    <svg width="24" height="24" viewBox="0 0 24 24">
-                      <use xlinkHref="#heart"></use>
-                    </svg>
-                  </a>
-                </li>
-                <li className="d-lg-none">
-                  <a href="#" className="mx-2" onClick={(e) => { e.preventDefault(); setIsCartOpen(true); }}>
-                    <svg width="24" height="24" viewBox="0 0 24 24">
-                      <use xlinkHref="#cart"></use>
-                    </svg>
-                  </a>
-                </li>
-                <li className="search-box mx-2">
-                  <a href="#search" className="search-button" onClick={(e) => { e.preventDefault(); setIsSearchOpen(!isSearchOpen); }}>
-                    <svg width="24" height="24" viewBox="0 0 24 24">
-                      <use xlinkHref="#search"></use>
-                    </svg>
-                  </a>
+                <li className="nav-item">
+                  <Link className="nav-link" href="/contact" style={{ fontSize: 'clamp(0.85rem, 2vw, 1rem)' }}>Contact</Link>
                 </li>
               </ul>
             </div>
+          </div>
+
+          {/* Desktop Icons - Right */}
+          <div className="d-none d-lg-flex align-items-center ms-auto">
+            <ul className="list-unstyled d-flex m-0 align-items-center gap-3">
+              <li>
+                <a href="#" className="text-uppercase text-decoration-none text-dark" style={{ fontSize: '0.95rem', whiteSpace: 'nowrap' }}>
+                  Wishlist <span className="wishlist-count">(0)</span>
+                </a>
+              </li>
+              <li>
+                <a href="#" className="text-uppercase text-decoration-none text-dark" onClick={(e) => { e.preventDefault(); setIsCartOpen(true); }} style={{ fontSize: '0.95rem', whiteSpace: 'nowrap', cursor: 'pointer' }}>
+                  Cart <span className="cart-count">(0)</span>
+                </a>
+              </li>
+              <li className="search-box">
+                <a href="#search" className="search-button d-flex align-items-center" onClick={(e) => { e.preventDefault(); setIsSearchOpen(!isSearchOpen); }}>
+                  <svg width="20" height="20" viewBox="0 0 24 24">
+                    <use xlinkHref="#search"></use>
+                  </svg>
+                </a>
+              </li>
+            </ul>
           </div>
         </div>
       </nav>
