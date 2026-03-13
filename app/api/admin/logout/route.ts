@@ -1,8 +1,10 @@
-import { clearAdminAuthCookie } from '@/app/lib/adminAuth';
 import { NextResponse } from 'next/server';
 
+export const dynamic = 'force-static';
+
 export async function POST() {
-  const response = NextResponse.json({ ok: true });
-  clearAdminAuthCookie(response);
-  return response;
+  return NextResponse.json(
+    { message: 'Admin API is disabled in static export mode.' },
+    { status: 503 }
+  );
 }

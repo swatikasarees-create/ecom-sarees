@@ -1,6 +1,10 @@
-import { isAuthenticatedRequest } from '@/app/lib/adminAuth';
-import { NextRequest, NextResponse } from 'next/server';
+import { NextResponse } from 'next/server';
 
-export async function GET(request: NextRequest) {
-  return NextResponse.json({ authenticated: isAuthenticatedRequest(request) });
+export const dynamic = 'force-static';
+
+export async function GET() {
+  return NextResponse.json(
+    { message: 'Admin API is disabled in static export mode.' },
+    { status: 503 }
+  );
 }
