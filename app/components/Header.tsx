@@ -114,6 +114,7 @@ export default function Header() {
             <li className="cat-list-item"><Link href="/sarees?type=patola" title="Patola Sarees">Patola Sarees</Link></li>
             <li className="cat-list-item"><Link href="/sarees?type=wedding" title="Wedding Sarees">Wedding Sarees</Link></li>
             <li className="cat-list-item"><Link href="/sarees?type=party" title="Party Wear Sarees">Party Wear Sarees</Link></li>
+            <li className="cat-list-item"><Link href="/sarees?type=suit" title="Suit">Suit</Link></li>
           </ul>
         </div>
       </div>
@@ -162,7 +163,7 @@ export default function Header() {
               </li>
             </ul>
             <Link className="w-100 btn btn-primary btn-lg" href="/cart" onClick={() => setIsCartOpen(false)}>
-              Open Cart
+              Open Checkout
             </Link>
           </div>
         </div>
@@ -244,11 +245,11 @@ export default function Header() {
               <li className="nav-item">
                 <Link className="nav-link" href="/about" style={{ fontSize: '1rem' }}>About Us</Link>
               </li>
-              <li className="nav-item dropdown">
-                <a className="nav-link dropdown-toggle" href="#" id="dropdownSarees" role="button" data-bs-toggle="dropdown" aria-expanded="false" style={{ fontSize: '1rem' }}>
+              <li className="nav-item">
+              <Link className="nav-link" href="/sarees" style={{ fontSize: '1rem' }}>
                   Sarees
-                </a>
-                <ul className="dropdown-menu" aria-labelledby="dropdownSarees">
+                </Link>
+                {/* <ul className="dropdown-menu" aria-labelledby="dropdownSarees">
                   <li><Link className="dropdown-item" href="/sarees?type=designer">Designer Sarees</Link></li>
                   <li><Link className="dropdown-item" href="/sarees?type=silk">Silk Sarees</Link></li>
                   <li><Link className="dropdown-item" href="/sarees?type=cotton">Cotton Sarees</Link></li>
@@ -256,11 +257,14 @@ export default function Header() {
                   <li><Link className="dropdown-item" href="/sarees?type=chiffon">Chiffon Sarees</Link></li>
                   <li><hr className="dropdown-divider" /></li>
                   <li><Link className="dropdown-item" href="/sarees">View All Sarees</Link></li>
-                </ul>
+                </ul> */}
               </li>
               <li className="nav-item">
-                <Link className="nav-link" href="/contact" style={{ fontSize: '1rem' }}>Contact</Link>
+                <Link className="nav-link" href="/sarees?type=suit" style={{ fontSize: '1rem' }}>Suit</Link>
               </li>
+              {/* <li className="nav-item">
+                <Link className="nav-link" href="/contact" style={{ fontSize: '1rem' }}>Contact</Link>
+              </li> */}
             </ul>
           </div>
 
@@ -291,6 +295,9 @@ export default function Header() {
                     <li><hr className="dropdown-divider" /></li>
                     <li><Link className="dropdown-item" href="/sarees">View All Sarees</Link></li>
                   </ul>
+                </li>
+                <li className="nav-item">
+                  <Link className="nav-link" href="/sarees?type=suit" style={{ fontSize: 'clamp(0.85rem, 2vw, 1rem)' }}>Suit</Link>
                 </li>
                 <li className="nav-item">
                   <Link className="nav-link" href="/contact" style={{ fontSize: 'clamp(0.85rem, 2vw, 1rem)' }}>Contact</Link>

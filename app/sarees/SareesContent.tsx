@@ -1,10 +1,9 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import Link from 'next/link';
 import Image from 'next/image';
 import { useSearchParams } from 'next/navigation';
-import { products, Product, getUniqueColors, getUniqueCategories, getUniqueFabrics, getUniqueCollections } from '../lib/productData';
+import { products, Product, getUniqueCategories, getUniqueFabrics } from '../lib/productData';
 import { addToCart, addToWishlist } from '../lib/commerceStore';
 
 export default function SareesContent() {
@@ -13,16 +12,13 @@ export default function SareesContent() {
 
   const [filteredProducts, setFilteredProducts] = useState<Product[]>(products);
   const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
-  const [selectedColors, setSelectedColors] = useState<string[]>([]);
   const [selectedFabrics, setSelectedFabrics] = useState<string[]>([]);
-  const [selectedCollections, setSelectedCollections] = useState<string[]>([]);
-  const [availability, setAvailability] = useState<'all' | 'in_stock' | 'out_of_stock'>('all');
-  const [priceRange, setPriceRange] = useState<[number, number]>([0, 5000]);
+  const [priceRange, setPriceRange] = useState<[number, number]>([0, 15000]);
   const [sortBy, setSortBy] = useState<string>('date-new');
   const [gridColumns, setGridColumns] = useState<number>(3);
   const [showFilters, setShowFilters] = useState<boolean>(false);
+  const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
 
-  // Initialize filters based on URL params
   useEffect(() => {
     if (typeParam) {
       const categoryMap: { [key: string]: string } = {
@@ -35,6 +31,7 @@ export default function SareesContent() {
         'patola': 'Patola Sarees',
         'wedding': 'Wedding Sarees',
         'party': 'Party Wear Sarees',
+        'suit': 'Suit',
       };
       const category = categoryMap[typeParam];
       if (category) {
@@ -43,39 +40,19 @@ export default function SareesContent() {
     }
   }, [typeParam]);
 
-  // Apply filters
   useEffect(() => {
     let filtered = [...products];
 
-    // Category filter
     if (selectedCategories.length > 0) {
       filtered = filtered.filter(p => selectedCategories.includes(p.category));
     }
 
-    // Color filter
-    if (selectedColors.length > 0) {
-      filtered = filtered.filter(p => selectedColors.includes(p.color));
-    }
-
-    // Fabric filter
     if (selectedFabrics.length > 0) {
       filtered = filtered.filter(p => selectedFabrics.includes(p.fabric));
     }
 
-    // Collection filter
-    if (selectedCollections.length > 0) {
-      filtered = filtered.filter(p => p.collection && selectedCollections.includes(p.collection));
-    }
-
-    // Availability filter
-    if (availability !== 'all') {
-      filtered = filtered.filter(p => p.availability === availability);
-    }
-
-    // Price range filter
     filtered = filtered.filter(p => p.price >= priceRange[0] && p.price <= priceRange[1]);
 
-    // Sorting
     switch (sortBy) {
       case 'price-low':
         filtered.sort((a, b) => a.price - b.price);
@@ -95,9 +72,24 @@ export default function SareesContent() {
     }
 
     setFilteredProducts(filtered);
-  }, [selectedCategories, selectedColors, selectedFabrics, selectedCollections, availability, priceRange, sortBy]);
+  }, [selectedCategories, selectedFabrics, priceRange, sortBy]);
 
-  const toggleFilter = (filterArray: string[], setFilterArray: React.Dispatch<React.SetStateAction<string[]>>, value: string) => {
+  useEffect(() => {
+    if (!selectedProduct) return;
+    const onEscape = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        setSelectedProduct(null);
+      }
+    };
+    window.addEventListener('keydown', onEscape);
+    return () => window.removeEventListener('keydown', onEscape);
+  }, [selectedProduct]);
+
+  const toggleFilter = (
+    filterArray: string[],
+    setFilterArray: React.Dispatch<React.SetStateAction<string[]>>,
+    value: string
+  ) => {
     if (filterArray.includes(value)) {
       setFilterArray(filterArray.filter(item => item !== value));
     } else {
@@ -107,11 +99,8 @@ export default function SareesContent() {
 
   const clearAllFilters = () => {
     setSelectedCategories([]);
-    setSelectedColors([]);
     setSelectedFabrics([]);
-    setSelectedCollections([]);
-    setAvailability('all');
-    setPriceRange([0, 5000]);
+    setPriceRange([0, 15000]);
   };
 
   const handleAddToCart = (product: Product) => {
@@ -156,60 +145,6 @@ export default function SareesContent() {
               </button>
             </div>
 
-            {/* Collections Filter */}
-            <div className="filter-section mb-3 mb-md-4 px-2 px-md-0">
-              <h5 className="filter-title mb-2 mb-md-3" style={{ fontSize: 'clamp(0.95rem, 2.5vw, 1.25rem)' }}>Collections</h5>
-              <div className="filter-options">
-                {getUniqueCollections().map(collection => (
-                  <div key={collection} className="form-check mb-2">
-                    <input
-                      className="form-check-input"
-                      type="checkbox"
-                      id={`collection-${collection}`}
-                      checked={selectedCollections.includes(collection)}
-                      onChange={() => toggleFilter(selectedCollections, setSelectedCollections, collection)}
-                    />
-                    <label className="form-check-label" htmlFor={`collection-${collection}`}>
-                      {collection}
-                    </label>
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            {/* Availability Filter */}
-            <div className="filter-section mb-3 mb-md-4 px-2 px-md-0">
-              <h5 className="filter-title mb-2 mb-md-3" style={{ fontSize: 'clamp(0.95rem, 2.5vw, 1.25rem)' }}>Availability</h5>
-              <div className="filter-options">
-                <div className="form-check mb-2">
-                  <input
-                    className="form-check-input"
-                    type="radio"
-                    name="availability"
-                    id="availability-all"
-                    checked={availability === 'all'}
-                    onChange={() => setAvailability('all')}
-                  />
-                  <label className="form-check-label" htmlFor="availability-all">
-                    All
-                  </label>
-                </div>
-                <div className="form-check mb-2">
-                  <input
-                    className="form-check-input"
-                    type="radio"
-                    name="availability"
-                    id="availability-in-stock"
-                    checked={availability === 'in_stock'}
-                    onChange={() => setAvailability('in_stock')}
-                  />
-                  <label className="form-check-label" htmlFor="availability-in-stock">
-                    In Stock ({products.filter(p => p.availability === 'in_stock').length})
-                  </label>
-                </div>
-              </div>
-            </div>
-
             {/* Price Filter */}
             <div className="filter-section mb-3 mb-md-4 px-2 px-md-0">
               <h5 className="filter-title mb-2 mb-md-3" style={{ fontSize: 'clamp(0.95rem, 2.5vw, 1.25rem)' }}>Price</h5>
@@ -222,8 +157,8 @@ export default function SareesContent() {
                   type="range"
                   className="form-range"
                   min="0"
-                  max="5000"
-                  step="100"
+                  max="15000"
+                  step="250"
                   value={priceRange[1]}
                   onChange={(e) => setPriceRange([0, parseInt(e.target.value)])}
                 />
@@ -251,46 +186,23 @@ export default function SareesContent() {
               </div>
             </div>
 
-            {/* Color Filter */}
             <div className="filter-section mb-3 mb-md-4 px-2 px-md-0">
-              <h5 className="filter-title mb-2 mb-md-3" style={{ fontSize: 'clamp(0.95rem, 2.5vw, 1.25rem)' }}>Color</h5>
-              <div className="filter-options d-flex flex-wrap gap-2">
-                {getUniqueColors().map(color => {
-                  const colorMap: { [key: string]: string } = {
-                    'Red': '#DC143C',
-                    'Pink': '#FFC0CB',
-                    'Yellow': '#FFD700',
-                    'Green': '#228B22',
-                    'Blue': '#1E90FF',
-                    'Black': '#000000',
-                    'Wine': '#722F37',
-                    'Mauve': '#E0B0FF',
-                    'Orange': '#FF8C00',
-                    'Gold': '#FFD700',
-                    'White': '#FFFFFF',
-                    'Purple': '#800080',
-                    'Maroon': '#800000',
-                    'Multi': 'linear-gradient(45deg, red, orange, yellow, green, blue, indigo, violet)',
-                  };
-                  return (
-                    <div 
-                      key={color} 
-                      className={`color-swatch ${selectedColors.includes(color) ? 'selected' : ''}`}
-                      style={{ 
-                        background: colorMap[color] || '#ccc',
-                        width: '36px',
-                        height: '36px',
-                        borderRadius: '50%',
-                        cursor: 'pointer',
-                        border: selectedColors.includes(color) ? '3px solid #000' : '2px solid #ddd',
-                        boxShadow: selectedColors.includes(color) ? '0 0 5px rgba(0,0,0,0.3)' : 'none',
-                        transition: 'all 0.2s'
-                      }}
-                      onClick={() => toggleFilter(selectedColors, setSelectedColors, color)}
-                      title={color}
+              <h5 className="filter-title mb-2 mb-md-3" style={{ fontSize: 'clamp(0.95rem, 2.5vw, 1.25rem)' }}>Fabric</h5>
+              <div className="filter-options">
+                {getUniqueFabrics().map(fabric => (
+                  <div key={fabric} className="form-check mb-2">
+                    <input
+                      className="form-check-input"
+                      type="checkbox"
+                      id={`fabric-${fabric}`}
+                      checked={selectedFabrics.includes(fabric)}
+                      onChange={() => toggleFilter(selectedFabrics, setSelectedFabrics, fabric)}
                     />
-                  );
-                })}
+                    <label className="form-check-label" htmlFor={`fabric-${fabric}`}>
+                      {fabric}
+                    </label>
+                  </div>
+                ))}
               </div>
             </div>
           </div>
@@ -300,7 +212,7 @@ export default function SareesContent() {
         <div className="col-lg-9 col-md-8">
           {/* Toolbar */}
           <div className="d-flex flex-wrap justify-content-between align-items-center mb-3 mb-md-4 px-2 px-md-0 gap-3">
-            <h2 style={{ fontSize: 'clamp(1.3rem, 4vw, 2rem)', marginBottom: '0' }}>Designer Sarees</h2>
+            <h2 style={{ fontSize: 'clamp(1.3rem, 4vw, 2rem)', marginBottom: '0' }}>All Products</h2>
             <div className="d-flex gap-2 gap-md-3 align-items-center flex-wrap">
               {/* Sort Dropdown */}
               <select 
@@ -367,7 +279,18 @@ export default function SareesContent() {
                 <div className="card h-100 border-0 shadow-sm product-card" style={{ transition: 'transform 0.3s' }}
                      onMouseEnter={(e) => e.currentTarget.style.transform = 'translateY(-5px)'}
                      onMouseLeave={(e) => e.currentTarget.style.transform = 'translateY(0)'}>
-                  <Link href={`/sarees/${product.id}`} className="text-decoration-none">
+                  <div
+                    className="text-decoration-none w-100 text-start"
+                    role="button"
+                    tabIndex={0}
+                    onClick={() => setSelectedProduct(product)}
+                    onKeyDown={(event) => {
+                      if (event.key === 'Enter' || event.key === ' ') {
+                        setSelectedProduct(product);
+                      }
+                    }}
+                    style={{ cursor: 'zoom-in' }}
+                  >
                     <div className="position-relative overflow-hidden" style={{ aspectRatio: '3/4' }}>
                       <Image
                         src={product.image}
@@ -421,7 +344,7 @@ export default function SareesContent() {
                         </button>
                       </div>
                     </div>
-                  </Link>
+                  </div>
                 </div>
               </div>
             ))}
@@ -439,6 +362,98 @@ export default function SareesContent() {
           )}
         </div>
       </div>
+
+      {selectedProduct && (
+        <div
+          role="button"
+          tabIndex={0}
+          onClick={() => setSelectedProduct(null)}
+          onKeyDown={(event) => {
+            if (event.key === 'Enter' || event.key === ' ') {
+              setSelectedProduct(null);
+            }
+          }}
+          style={{
+            position: 'fixed',
+            inset: 0,
+            backgroundColor: 'rgba(0, 0, 0, 0.65)',
+            zIndex: 1050,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            padding: '16px',
+          }}
+        >
+          <div
+            role="dialog"
+            aria-modal="true"
+            onClick={(event) => event.stopPropagation()}
+            style={{
+              width: 'min(980px, 100%)',
+              maxHeight: '90vh',
+              background: '#fff',
+              borderRadius: '14px',
+              overflow: 'hidden',
+              boxShadow: '0 25px 60px rgba(0,0,0,0.3)',
+            }}
+          >
+            <div className="row g-0">
+              <div className="col-md-6">
+                <div style={{ position: 'relative', width: '100%', minHeight: '55vh' }}>
+                  <Image
+                    src={selectedProduct.image}
+                    alt={selectedProduct.name}
+                    fill
+                    style={{ objectFit: 'cover', objectPosition: 'center top' }}
+                    unoptimized
+                  />
+                </div>
+              </div>
+              <div className="col-md-6">
+                <div className="p-3 p-md-4">
+                  <div className="d-flex justify-content-between align-items-start gap-3">
+                    <h4 className="mb-2">{selectedProduct.name}</h4>
+                    <button
+                      type="button"
+                      className="btn-close"
+                      onClick={() => setSelectedProduct(null)}
+                      aria-label="Close"
+                    />
+                  </div>
+                  <p className="text-muted mb-2">
+                    {selectedProduct.category} • {selectedProduct.fabric}
+                  </p>
+                  <div className="d-flex align-items-center gap-2 mb-3">
+                    <span className="fw-bold fs-5">₹{selectedProduct.price.toLocaleString('en-IN')}</span>
+                    {selectedProduct.originalPrice && (
+                      <span className="text-muted text-decoration-line-through">
+                        ₹{selectedProduct.originalPrice.toLocaleString('en-IN')}
+                      </span>
+                    )}
+                  </div>
+                  <p className="text-muted mb-4">{selectedProduct.description || 'No description available.'}</p>
+                  <div className="d-flex gap-2">
+                    <button
+                      type="button"
+                      className="btn btn-dark"
+                      onClick={() => handleAddToCart(selectedProduct)}
+                    >
+                      Add to Cart
+                    </button>
+                    <button
+                      type="button"
+                      className="btn btn-outline-dark"
+                      onClick={() => handleAddToWishlist(selectedProduct)}
+                    >
+                      Wishlist
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

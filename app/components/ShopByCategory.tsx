@@ -39,6 +39,12 @@ export default function ShopByCategory() {
       name: 'Partywear Sarees',
       image: instaImg('5cc317d0105e936b6b2fa225210e55064f5cf16bd6c0137a4572165ee7c27d15'),
       link: '/sarees?type=party'
+    },
+    {
+      id: 6,
+      name: 'Suit',
+      image: instaImg('49faf2cd234e3d788bf0f9d46ae15cdbb8f5773d30954f7f92265dc1c75372c8'),
+      link: '/sarees?type=suit'
     }
   ];
 

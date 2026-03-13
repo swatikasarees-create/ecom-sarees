@@ -16,7 +16,7 @@ export interface Product {
 
 const instaImg = (hash: string) => getProductImageByHash(hash);
 
-export const products: Product[] = [
+const baseProducts: Product[] = [
   // ── Kurta Sets & Suit Sets ──────────────────────────────────────
   {
     id: '1',
@@ -561,6 +561,108 @@ export const products: Product[] = [
     description: 'This beautiful pink saree is adorned with delicate embroidery and intricate border detailing. Lightweight fabric drapes effortlessly with a scalloped border and fine embroidery—perfect for festive occasions and celebrations.'
   },
 ];
+
+type ProductSheetOverride = {
+  name: string;
+  description: string;
+  category: 'Sarees' | 'Suit';
+  subCategory: string;
+  price: number;
+  hash: string;
+};
+
+const sheetOverrides: Record<string, ProductSheetOverride> = {
+  '1': { name: 'Blush Pink Mirror-Embellished Kurta Set with Dupatta Crape Material ', description: 'A graceful blush-pink kurta elevated with delicate buti motifs and shimmering embellishment along the neckline and panel detailing. The coordinated dupatta completes the look with an elegant border finish-perfect for festive mornings, intimate gatherings, and celebratory dinners.', category: 'Suit', subCategory: 'Suit', price: 3200, hash: '49faf2cd234e3d788bf0f9d46ae15cdbb8f5773d30954f7f92265dc1c75372c8' },
+  '2': { name: 'Mint Green Mirror & Thread Embroidered Kurta Set with Dupatta', description: 'Fresh and refined mint kurta featuring understated embroidery and mirror-style accents around the neckline paired with a coordinated dupatta.', category: 'Suit', subCategory: 'Suit', price: 3200, hash: 'f66f3bd1d626c270c668337ad7ee728a80a172fafc370d88ba318267627c4403' },
+  '3': { name: 'Mint & Blush Kurta Set (Color Options)', description: 'Timeless embroidered kurta set offered in mint and blush shades with matching dupatta.', category: 'Suit', subCategory: 'Suit', price: 3200, hash: 'b4cca86a4ab2a3f245718b45cc80f953c5f5b165c04735d66ed497463b25dd5f' },
+  '4': { name: 'Ivory Shimmer Net Saree with Fringe Pallu', description: 'Ivory saree featuring all-over shimmer with dramatic net pallu and fringe finish.', category: 'Sarees', subCategory: 'Net Sarees', price: 5000, hash: 'b4cca86a4ab2a3f245718b45cc80f953c5f5b165c04735d66ed497463b25dd5f' },
+  '5': { name: 'Net Embellished Saree with Intricate Border', description: 'Seafoam saree with embroidered border and sequin detailing.', category: 'Sarees', subCategory: 'Net Sarees', price: 8000, hash: '46a257b9b9f758da7849f836bf71346d414778c4382aac9c626a44c1c91301b9' },
+  '6': { name: 'Rust Orange Crush Silk Saree with Metallic Pallu', description: 'Rust-orange saree featuring bandhani-inspired pattern and metallic pallu.', category: 'Sarees', subCategory: 'Silk Sarees', price: 4500, hash: 'b9606fa353f07c69822a7f45e9dff88435ded645dc85564219b7027cf3b5ac5f' },
+  '7': { name: 'Ghat Cholla Saree with Vibrant Pink Border & Motifs', description: 'Cream saree with contrast pink border and ornate motif detailing.', category: 'Sarees', subCategory: 'Silk Sarees', price: 11000, hash: 'ba76809e38182a59fc059fd1b5ff8d54fbef1671671d7dc2d45e60da014280e0' },
+  '8': { name: 'Mint Green Embroidered Kurta Set', description: 'Mint kurta with embellished neckline and coordinated dupatta.', category: 'Suit', subCategory: 'Suit', price: 3200, hash: '58c261d7b5b2a35e2cee8bcbff1812eb996427bdf0d134218f9d0abae29ee3da' },
+  '9': { name: 'Ivory Floral Embroidered Kurta Set', description: 'Ivory kurta set with pastel floral embroidery and dupatta.', category: 'Suit', subCategory: 'Suit', price: 2200, hash: '7e2a731cd4511deb5570e146d79835cc01042aa7230f8e8383c43c6bae58a690' },
+  '10': { name: 'Navy Blue Net Saree with Crystal Lace & Cut Dana Work', description: 'Navy saree with dense sequin work and lace drape effect.', category: 'Sarees', subCategory: 'Net Sarees', price: 1200, hash: 'f97c788c153fcb26647e7ed1f91a161928fe7fbe720e992853654db25d644425' },
+  '11': { name: 'Pistachio Green Saree with Gold Brocade Pallu and Gotta Pati Work', description: 'Pistachio saree with broad gold brocade-style pallu.', category: 'Sarees', subCategory: 'Cotton Sarees', price: 3000, hash: 'cde29bd485ed32919ab8dcad18d98b1e4bfef3c66784dea02b1101d78c37a3cc' },
+  '12': { name: 'Yellow-Turquoise Ombre Embroidered Suit Set', description: 'Ombre embroidered suit set with decorated dupatta border.', category: 'Suit', subCategory: 'Suit', price: 4200, hash: 'ac3c658306090476652612f6355f19d23a23a920e525e21d7ebe708c2ae41a5a' },
+  '13': { name: 'Pastel Rainbow Stripe Saree Chinese Silk with Cut Danna Work', description: 'Pastel multicolor stripe saree with soft border.', category: 'Sarees', subCategory: 'Silk Sarees', price: 3200, hash: '15ff321335eca96ad3ae10207dc3e64dc57578cc932fa81e1fe20de55de7de1d' },
+  '14': { name: 'Red Banarasi Style Saree', description: 'Red saree with woven motifs and embellished border.', category: 'Sarees', subCategory: 'Silk Sarees', price: 2500, hash: '5186d35ab5d128cb025aef675d5ca51d8646f46f6c19651c8e009e11e5ffaff7' },
+  '15': { name: 'Red Printed Suit Set with Embroidered Yoke', description: 'Bandhani printed suit set with embroidered yoke and dupatta.', category: 'Suit', subCategory: 'Suit', price: 2000, hash: 'dd4eba1c36b71bd8eab402da40cf9e2519b87100af9f60737cd0c08b350f8871' },
+  '16': { name: 'Ivory & Mustard Floral Suit Set', description: 'Floral kurta paired with mustard dupatta with lace border.', category: 'Suit', subCategory: 'Suit', price: 3500, hash: 'dba7ab2b7885147d185fa3efa22f8fd264e979965723216678632c833d66f369' },
+  '17': { name: 'Fuchsia Kurta Set with Orange Ombre Dupatta', description: 'Fuchsia kurta with embroidery paired with contrast dupatta.', category: 'Suit', subCategory: 'Suit', price: 4200, hash: '25a8a9a369d3e58e76f7f66cfd9e4fec57fc015dbb7048b2f0da89c6a71748eb' },
+  '18': { name: 'Tissue Silk Saree', description: 'Elegant lightweight tissue silk saree with natural sheen.', category: 'Sarees', subCategory: 'Silk Sarees', price: 4999, hash: '33b3c5ac84e7f428324c6d67f6a7f0732598ee87e26a0b165e594c3932725ac9' },
+  '19': { name: 'Ajrakh Modal Silk Suit Material', description: 'Premium modal silk Ajrakh suit material.', category: 'Suit', subCategory: 'Suit', price: 6999, hash: '64485eabdeb13de6daba8b093e357b1a1f0603cb7f4a39bbfd3587b7913d2741' },
+  '20': { name: 'Ajrakh Modal Silk Suit Material Variant 2', description: 'Premium Ajrakh modal silk suit material.', category: 'Suit', subCategory: 'Suit', price: 6999, hash: 'a6b80fbaabbb3fa5d90ec2601a088608116fa805c10684f12977f17216ee88f4' },
+  '21': { name: 'Ajrakh Modal Silk Suit Material Variant 3', description: 'Ajrakh modal silk unstitched suit material.', category: 'Suit', subCategory: 'Suit', price: 6999, hash: '8fa036bdb85a67bf51dad5e1d63a9272658812d5218ebf7adfade1f6d53885fd' },
+  '22': { name: 'Ajrakh Modal Silk Suit Material Premium', description: 'Ajrakh modal silk suit material with dupatta.', category: 'Suit', subCategory: 'Suit', price: 7000, hash: 'b3132156e9bee35cba7089e02179cde7b3d80b4b20c05322f3db2f41997cba74' },
+  '23': { name: 'Elegant Ajrakh Silk Suit Printed Ethnic Set with Dupatta', description: 'Printed ethnic outfit with bordered dupatta.', category: 'Suit', subCategory: 'Suit', price: 6999, hash: 'f951397db4e9308c0c127fc53ac3172a59996d1f5ad195c2584da3d47948bfcb' },
+  '24': { name: 'Ajrakh Cream Suit Material', description: 'Ajrakh printed cream suit material.', category: 'Suit', subCategory: 'Suit', price: 6999, hash: '262563f39f9602f32bfd2734c98ca219dd03242e8006cd79dd0852bd50e41a3d' },
+  '25': { name: 'Ajrakh Crepe Suit Material', description: 'Ajrakh print crepe suit material with dupatta.', category: 'Suit', subCategory: 'Suit', price: 4999, hash: 'd80f7285cd6d5b4a4277c1ecf5a1a4370a71c16678678447a4664efd6c3bd107' },
+  '26': { name: 'Unstitched Cotton Suit Material', description: 'Cotton printed suit material with dupatta.', category: 'Suit', subCategory: 'Suit', price: 1799, hash: '56bd6f7e0be41344784afb00fac8076c97ee0fc887ebcef7b8d6fa88ed861595' },
+  '27': { name: 'Unstitched Cotton Suit Material Variant', description: 'Cotton traditional printed suit material.', category: 'Suit', subCategory: 'Suit', price: 1799, hash: 'd925e5242236c1d8261194f501b44accb8202fa5818289493f62e1baa8d0af95' },
+  '28': { name: 'Indigo Handblock Cotton Suit Set', description: 'Indigo cotton handblock unstitched suit set.', category: 'Suit', subCategory: 'Suit', price: 1799, hash: '6212ba7c59c32452d84db35bedb9ef3e2a531548a80431f31ae1e59e9b25efce' },
+  '29': { name: 'Black Floral Cotton Unstitched Suit Material', description: 'Black floral cotton suit material.', category: 'Suit', subCategory: 'Suit', price: 1799, hash: 'd0cb1614c38144291d7b7f2f1ef44e505a80b0103188c6e471a384ad504ac73e' },
+  '30': { name: 'Olive Green Cotton Unstitched Suit Material', description: 'Olive green cotton suit material.', category: 'Suit', subCategory: 'Suit', price: 1799, hash: '92e8a4e68aaef26e48f50db8e4edab71518355f9607282a1d63d48938b0b648e' },
+  '31': { name: 'Pearl Work Net Saree', description: 'Net saree with pearl handwork.', category: 'Sarees', subCategory: 'Net Sarees', price: 12000, hash: 'b412ff6e2520e71391d64b0560de436686b29db2cb76bd68e417bbda70211003' },
+  '32': { name: 'Premium Cotton Saree', description: 'Cotton saree with contrast border.', category: 'Sarees', subCategory: 'Cotton Sarees', price: 2500, hash: '3876d6356902934f89c32ff17a01069cbecd69a3f5ed463a3e3d2cf989ee847d' },
+  '33': { name: 'Printed Cotton Saree', description: 'Floral printed cotton saree.', category: 'Sarees', subCategory: 'Cotton Sarees', price: 2500, hash: 'a625e75d53e05d671353dc654c404548f58b4b440a3dbbe9273fea3db6010c8b' },
+  '34': { name: 'Ajrakh Print Saree', description: 'Ajrakh print saree with contrast border.', category: 'Sarees', subCategory: 'Cotton Sarees', price: 2500, hash: 'd8332bf3602f8e73088c89a4e8898a7b56662409af932157dee89c8a97e6ece8' },
+  '35': { name: 'Stone Work Net Saree', description: 'Net saree with heavy stone work.', category: 'Sarees', subCategory: 'Net Sarees', price: 11000, hash: '8f984c7487be2c119a063599ec22580bfdb5b1a3476cd89793531fe8ddc9c3a6' },
+  '36': { name: 'Tissue Thread Work Saree', description: 'Beige tissue saree with floral thread work.', category: 'Sarees', subCategory: 'Silk Sarees', price: 4500, hash: 'a8873565af396d4c051d0dcdcfcd112fe4e43008361dabe2dcdcf5e0d39814e5' },
+  '37': { name: 'Green Woven Silk Saree', description: 'Green saree with woven motifs and zari border.', category: 'Sarees', subCategory: 'Silk Sarees', price: 2500, hash: '1e8e23aeb8d70b9213ae15ac20175c0d35e88cbdadc93b8ed8d86ffd02ef8a8a' },
+  '38': { name: 'Designer Drape Saree Collection', description: 'Collection of beige, blush pink and navy sarees.', category: 'Sarees', subCategory: 'Designer Sarees', price: 6000, hash: '5cc317d0105e936b6b2fa225210e55064f5cf16bd6c0137a4572165ee7c27d15' },
+  '39': { name: 'Ready to Drape Saree', description: 'Pre-stitched saree with modern silhouette.', category: 'Sarees', subCategory: 'Designer Sarees', price: 5000, hash: 'b72f9f7d372c0c5c8c90ba446023ae36c2eadcee4d0bb3b3e9ab0474b15d1866' },
+  '40': { name: 'Patola Silk Saree', description: 'Traditional Patola silk saree with motifs.', category: 'Sarees', subCategory: 'Silk Sarees', price: 6000, hash: 'd572b2ddeebc5c37c8eb4c63deb69e10c3543589c62374ec45558d4217058267' },
+  '41': { name: 'Soft Tissue Silk Saree with Sequin Work', description: 'Pink saree with embroidery and sequin border.', category: 'Sarees', subCategory: 'Silk Sarees', price: 4500, hash: '59faa94e5e6422d3d7e99a492e212774569ccc6fe656c8d961b1a24c46a99e51' },
+  '42': { name: 'Pistachio Yellow Saree with Gold Brocade Pallu and Gotta Pati Work', description: 'Pistachio saree with broad gold brocade-style pallu.', category: 'Sarees', subCategory: 'Cotton Sarees', price: 3000, hash: '99b897073a1de279d53b0fcbbe86a332f7f39512ff4ce991a971ab3bc6f16ada' },
+  '43': { name: 'Designer Drape Saree with Belt', description: 'Stylish ready-to-drape saree paired with an elegant belt for a modern and sophisticated look. Perfect for parties, receptions, and special occasions.', category: 'Sarees', subCategory: 'Designer Sarees', price: 6999, hash: '80e7565da17614679d2692fa51522b34655a1f199c3261dae7c50fe1a866bf5c' },
+  '44': { name: 'Designer Drape Saree with Belt', description: 'Elegant ready-to-drape saree paired with a stylish belt, designed for a modern and glamorous look. Perfect for parties, receptions, and special occasions.', category: 'Sarees', subCategory: 'Designer Sarees', price: 3999, hash: '6a80753ef9c993d26fe71435e556bb46ff4a773d1a872107ea651beaa6408478' },
+  '45': { name: 'Designer Drape Saree with Belt', description: 'Stylish ready-to-drape saree designed for a modern and elegant look. Comes with a fashionable waist belt (design may vary slightly from image), perfect for parties and special occasions.', category: 'Sarees', subCategory: 'Designer Sarees', price: 3999, hash: '4707c2a83d3a603efae7c5ce53c3d7fcf7e3af58a5f35903db3305daf0e2e676' },
+  '46': { name: 'Designer Drape Saree with Cut Dana Work & Belt', description: 'Elegant ready-to-drape saree featuring beautiful cut dana work and a stylish waist belt for a modern, glamorous look. Perfect for parties, weddings, and special occasions.', category: 'Sarees', subCategory: 'Designer Sarees', price: 4999, hash: 'b28d4b2350c7a5c4b536e47a6eae917261e8a6817c6ac7ba49791841eacb5873' },
+  '47': { name: 'Tissue Silk Saree with Mirror Work Blouse', description: 'Elegant tissue silk saree paired with a stunning mirror work blouse, designed to add a rich and graceful touch to your festive and wedding look.', category: 'Sarees', subCategory: 'Silk Sarees', price: 4999, hash: '0ed429197315f353718198447e25e4ca6d9a0d983458f45e97a7cb8f9e5d1a72' },
+  '48': { name: 'Move Colour Drape Saree with Belt & Cut Dana Work', description: 'Elegant ready-to-drape saree featuring beautiful cut dana work and a stylish waist belt for a modern, glamorous look. Perfect for parties, weddings, and special occasions.', category: 'Sarees', subCategory: 'Designer Sarees', price: 6999, hash: '8cdccfde2a167d487c3205b689ee2076a769c083ef4c6dee1146c91e3abd4d94' },
+};
+
+const deriveFabricFromCategory = (category: string) => {
+  const value = category.toLowerCase();
+  if (value.includes('silk')) return 'Silk';
+  if (value.includes('cotton')) return 'Cotton';
+  if (value.includes('net')) return 'Net';
+  if (value.includes('designer')) return 'Premium Fabric';
+  return 'Cotton';
+};
+
+const buildProductFromSheet = (id: string, item: ProductSheetOverride): Product => ({
+  id,
+  name: item.name,
+  price: item.price,
+  image: instaImg(item.hash),
+  category: item.category === 'Suit' ? 'Suit' : item.subCategory,
+  fabric: deriveFabricFromCategory(item.subCategory),
+  color: 'Multi',
+  availability: 'in_stock',
+  collection: item.category === 'Suit' ? 'Suit Collection' : 'Saree Collection',
+  description: item.description,
+});
+
+const overriddenProducts = baseProducts.map((product) => {
+  const override = sheetOverrides[product.id];
+  if (!override) return product;
+  return {
+    ...product,
+    name: override.name,
+    description: override.description,
+    price: override.price,
+    image: instaImg(override.hash),
+    category: override.category === 'Suit' ? 'Suit' : override.subCategory,
+  };
+});
+
+const existingIds = new Set(overriddenProducts.map((product) => product.id));
+const appendedSheetProducts = Object.entries(sheetOverrides)
+  .filter(([id]) => !existingIds.has(id))
+  .map(([id, item]) => buildProductFromSheet(id, item));
+
+export const products: Product[] = [...overriddenProducts, ...appendedSheetProducts];
 
 // ── Filter Helpers ────────────────────────────────────────────────
 
