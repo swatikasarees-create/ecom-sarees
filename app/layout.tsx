@@ -19,7 +19,7 @@ const marcellus = Marcellus({
   variable: "--font-marcellus",
 });
 
-const siteUrl = process.env.NEXT_PUBLIC_SITE_URL;
+const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://www.swatikasarees.com";
 
 export const metadata: Metadata = {
   title: "swatika - Fashion Store",
