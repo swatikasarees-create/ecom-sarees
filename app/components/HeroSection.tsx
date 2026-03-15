@@ -213,6 +213,17 @@ export default function HeroSection() {
           </div>
         </div>
       </div>
+      <style jsx>{`
+        @media (max-width: 767.98px) {
+          #billboard .icon-arrow {
+            display: none !important;
+          }
+
+          #billboard .swiper.main-swiper {
+            padding-bottom: 8px !important;
+          }
+        }
+      `}</style>
     </section>
   );
 }

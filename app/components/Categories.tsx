@@ -113,7 +113,7 @@ export default function Categories() {
 
           {/* Tabs */}
           <div 
-            className="d-flex justify-content-center gap-4 gap-md-5 mb-4 mb-md-5"
+            className="d-flex flex-wrap justify-content-center gap-3 gap-md-5 mb-4 mb-md-5"
             data-aos="fade-up" 
             data-aos-delay="200"
           >

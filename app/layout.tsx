@@ -19,10 +19,16 @@ const marcellus = Marcellus({
   variable: "--font-marcellus",
 });
 
+const siteUrl = process.env.NEXT_PUBLIC_SITE_URL;
+
 export const metadata: Metadata = {
   title: "swatika - Fashion Store",
   description: "swatika - Timeless Elegance in Every Drape|Buy Online Sarees at Best Price | Best Sarees Online| Best Sarees in India ",
   keywords: "ecommerce,fashion,store",
+  metadataBase: siteUrl ? new URL(siteUrl) : undefined,
+  alternates: {
+    canonical: "/",
+  },
   icons: {
     icon: "/favicon.ico",
   },

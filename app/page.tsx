@@ -1,3 +1,4 @@
+import type { Metadata } from 'next';
 import TopHeader from './components/TopHeader';
 import Header from './components/Header';
 import BannerCarousel from './components/BannerCarousel';
@@ -18,6 +19,12 @@ import AOSInit from './components/AOSInit';
 import SectionSeparator from './components/SectionSeparator';
 import ScrollToTop from './components/ScrollToTop';
 import { products } from './lib/productData';
+
+export const metadata: Metadata = {
+  alternates: {
+    canonical: '/',
+  },
+};
 
 // Convert products to carousel format
 const formatProductsForCarousel = (prods: typeof products) => 

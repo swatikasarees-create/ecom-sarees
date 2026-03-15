@@ -108,7 +108,7 @@ export default function ProductCarousel({ title, products, sectionId }: ProductC
                   const img = e.currentTarget.querySelector('.product-image') as HTMLElement;
                   if (img) img.style.transform = 'scale(1)';
                 }}>
-                  <div className="image-holder position-relative" style={{ height: '400px', overflow: 'hidden', background: '#f8f8f8' }}>
+                  <div className="image-holder product-image-holder position-relative" style={{ height: '400px', overflow: 'hidden', background: '#f8f8f8' }}>
                     <Link href="/sarees">
                       <Image
                         src={product.image}
@@ -299,6 +299,26 @@ export default function ProductCarousel({ title, products, sectionId }: ProductC
           </div>
         </div>
       </div>
+      <style jsx>{`
+        @media (max-width: 767.98px) {
+          .product-swiper .icon-arrow {
+            display: none !important;
+          }
+
+          .product-swiper .quick-view-btn {
+            display: none !important;
+          }
+
+          .product-swiper .product-image-holder {
+            height: clamp(240px, 62vw, 320px) !important;
+          }
+
+          .product-swiper .product-content {
+            min-height: auto !important;
+            padding: 12px !important;
+          }
+        }
+      `}</style>
     </section>
   );
 }

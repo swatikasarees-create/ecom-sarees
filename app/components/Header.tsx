@@ -214,11 +214,11 @@ export default function Header() {
                   </span>
                 )}
               </a>
-              <a href="#search" className="search-button d-flex align-items-center" onClick={(e) => { e.preventDefault(); setIsSearchOpen(!isSearchOpen); }}>
+              {/* <a href="#search" className="search-button d-flex align-items-center" onClick={(e) => { e.preventDefault(); setIsSearchOpen(!isSearchOpen); }}>
                 <svg width="20" height="20" viewBox="0 0 24 24">
                   <use xlinkHref="#search"></use>
                 </svg>
-              </a>
+              </a> */}
             </div>
           </div>
 
@@ -282,11 +282,11 @@ export default function Header() {
                 <li className="nav-item">
                   <Link className="nav-link" href="/about" style={{ fontSize: 'clamp(0.85rem, 2vw, 1rem)' }}>About Us</Link>
                 </li>
-                <li className="nav-item dropdown">
-                  <a className="nav-link dropdown-toggle" href="#" id="dropdownSareesMobile" role="button" data-bs-toggle="dropdown" aria-expanded="false" style={{ fontSize: 'clamp(0.85rem, 2vw, 1rem)' }}>
+                <li className="nav-item ">
+                  <Link className="nav-link " href="/sarees" id="dropdownSareesMobile"  aria-expanded="false" style={{ fontSize: 'clamp(0.85rem, 2vw, 1rem)' }}>
                     Sarees
-                  </a>
-                  <ul className="dropdown-menu" aria-labelledby="dropdownSareesMobile">
+                  </Link>
+                  {/* <ul className="dropdown-menu" aria-labelledby="dropdownSareesMobile">
                     <li><Link className="dropdown-item" href="/sarees?type=designer">Designer Sarees</Link></li>
                     <li><Link className="dropdown-item" href="/sarees?type=silk">Silk Sarees</Link></li>
                     <li><Link className="dropdown-item" href="/sarees?type=cotton">Cotton Sarees</Link></li>
@@ -294,14 +294,14 @@ export default function Header() {
                     <li><Link className="dropdown-item" href="/sarees?type=chiffon">Chiffon Sarees</Link></li>
                     <li><hr className="dropdown-divider" /></li>
                     <li><Link className="dropdown-item" href="/sarees">View All Sarees</Link></li>
-                  </ul>
+                  </ul> */}
                 </li>
                 <li className="nav-item">
                   <Link className="nav-link" href="/sarees?type=suit" style={{ fontSize: 'clamp(0.85rem, 2vw, 1rem)' }}>Suit</Link>
                 </li>
-                <li className="nav-item">
+                {/* <li className="nav-item">
                   <Link className="nav-link" href="/contact" style={{ fontSize: 'clamp(0.85rem, 2vw, 1rem)' }}>Contact</Link>
-                </li>
+                </li> */}
               </ul>
             </div>
           </div>
