@@ -2,26 +2,33 @@
 
 import Link from 'next/link';
 import Image from 'next/image';
-import { useEffect, useMemo, useState } from 'react';
-import {
-  getCart,
-  getStoreEventName,
-  getWishlist,
-  removeFromCart,
-  type CartItem,
-} from '../lib/commerceStore';
+import { useRouter } from 'next/navigation';
+import type { CSSProperties } from 'react';
+import { FormEvent, useEffect, useMemo, useState } from 'react';
+import { getCart, getStoreEventName, removeFromCart, type CartItem } from '../lib/commerceStore';
+import { products } from '../lib/productData';
 
 export default function Header() {
+  const router = useRouter();
   const [isOffcanvasOpen, setIsOffcanvasOpen] = useState(false);
   const [isCartOpen, setIsCartOpen] = useState(false);
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [cartItems, setCartItems] = useState<CartItem[]>([]);
-  const [wishlistCount, setWishlistCount] = useState(0);
+  const [searchTerm, setSearchTerm] = useState('');
+
+  /** Same display font as "Saree Collection" (h2 uses Marcellus / --heading-font in style.css). */
+  const navFontStyle: CSSProperties = {
+    fontFamily: 'var(--font-marcellus), "Marcellus", Georgia, serif',
+    fontWeight: 400,
+    letterSpacing: '0.1em',
+    fontSize: '1.10rem',
+    color: '#111',
+    transition: 'color 0.22s ease',
+  };
 
   useEffect(() => {
     const syncStore = () => {
       setCartItems(getCart());
-      setWishlistCount(getWishlist().length);
     };
     syncStore();
     const eventName = getStoreEventName();
@@ -37,6 +44,28 @@ export default function Header() {
     () => cartItems.reduce((sum, item) => sum + item.price * item.qty, 0),
     [cartItems]
   );
+  const searchMatches = useMemo(() => {
+    const query = searchTerm.trim().toLowerCase();
+    if (!query) return [];
+    return products
+      .filter((product) => product.name.toLowerCase().includes(query))
+      .slice(0, 8);
+  }, [searchTerm]);
+
+  const toCheckoutHref = (productId: string, productName: string) =>
+    `/checkout?productId=${productId}&product=${encodeURIComponent(productName)}`;
+
+  const onSearchSubmit = (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    const query = searchTerm.trim();
+    if (!query) return;
+    if (searchMatches.length > 0) {
+      const topMatch = searchMatches[0];
+      router.push(toCheckoutHref(topMatch.id, topMatch.name));
+      setIsSearchOpen(false);
+      setSearchTerm('');
+    }
+  };
 
   return (
     <>
@@ -76,10 +105,6 @@ export default function Header() {
               <path d="M16 11V6a4 4 0 0 0-4-4v0a4 4 0 0 0-4 4v5" />
             </g>
           </symbol>
-          <symbol xmlns="http://www.w3.org/2000/svg" id="heart" viewBox="0 0 24 24">
-            <path fill="currentColor"
-              d="M20.16 4.61A6.27 6.27 0 0 0 12 4a6.27 6.27 0 0 0-8.16 9.48l7.45 7.45a1 1 0 0 0 1.42 0l7.45-7.45a6.27 6.27 0 0 0 0-8.87Zm-1.41 7.46L12 18.81l-6.75-6.74a4.28 4.28 0 0 1 3-7.3a4.25 4.25 0 0 1 3 1.25a1 1 0 0 0 1.42 0a4.27 4.27 0 0 1 6 6.05Z" />
-          </symbol>
           <symbol xmlns="http://www.w3.org/2000/svg" id="search" viewBox="0 0 24 24">
             <path fill="currentColor"
               d="M21.71 20.29L18 16.61A9 9 0 1 0 16.61 18l3.68 3.68a1 1 0 0 0 1.42 0a1 1 0 0 0 0-1.39ZM11 18a7 7 0 1 1 7-7a7 7 0 0 1-7 7Z" />
@@ -88,15 +113,25 @@ export default function Header() {
             <path fill="currentColor"
               d="M8.5 19a1.5 1.5 0 1 0 1.5 1.5A1.5 1.5 0 0 0 8.5 19ZM19 16H7a1 1 0 0 1 0-2h8.491a3.013 3.013 0 0 0 2.885-2.176l1.585-5.55A1 1 0 0 0 19 5H6.74a3.007 3.007 0 0 0-2.82-2H3a1 1 0 0 0 0 2h.921a1.005 1.005 0 0 1 .962.725l.155.545v.005l1.641 5.742A3 3 0 0 0 7 18h12a1 1 0 0 0 0-2Zm-1.326-9l-1.22 4.274a1.005 1.005 0 0 1-.963.726H8.754l-.255-.892L7.326 7ZM16.5 19a1.5 1.5 0 1 0 1.5 1.5a1.5 1.5 0 0 0-1.5-1.5Z" />
           </symbol>
+          <symbol xmlns="http://www.w3.org/2000/svg" id="package-search" viewBox="0 0 24 24">
+            <path fill="currentColor" d="M3 4a2 2 0 0 1 2-2h6.172a2 2 0 0 1 1.414.586l1.828 1.828A2 2 0 0 0 14.828 5H19a2 2 0 0 1 2 2v3h-8l-2-2H5v10h6v2H5a2 2 0 0 1-2-2V4zm11 11.414l4.95 4.95l-1.414 1.414L12.586 17H11v-2h2v-.586zM11 15a4 4 0 1 1 8 0a4 4 0 0 1-8 0z" />
+          </symbol>
         </defs>
       </svg>
 
       {/* Search Popup */}
       <div className={`search-popup ${isSearchOpen ? 'show' : ''}`}>
         <div className="search-popup-container">
-          <form role="search" method="get" className="form-group" action="">
-            <input type="search" id="search-form" className="form-control border-0 border-bottom"
-              placeholder="Type and press enter" name="s" />
+          <form role="search" method="get" className="form-group" action="" onSubmit={onSearchSubmit}>
+            <input
+              type="search"
+              id="search-form"
+              className="form-control border-0 border-bottom"
+              placeholder="Search product by name"
+              name="s"
+              value={searchTerm}
+              onChange={(event) => setSearchTerm(event.target.value)}
+            />
             <button type="submit" className="search-submit border-0 position-absolute bg-white"
               style={{ top: '15px', right: '15px' }}>
               <svg className="search" width="24" height="24">
@@ -104,6 +139,34 @@ export default function Header() {
               </svg>
             </button>
           </form>
+
+          {searchTerm.trim().length > 0 && (
+            <div className="mb-4">
+              <h5 className="cat-list-title">Search Results</h5>
+              {searchMatches.length > 0 ? (
+                <ul className="cat-list">
+                  {searchMatches.map((product) => (
+                    <li key={product.id} className="cat-list-item">
+                      <Link
+                        href={toCheckoutHref(product.id, product.name)}
+                        title={product.name}
+                        onClick={() => {
+                          setIsSearchOpen(false);
+                          setSearchTerm('');
+                        }}
+                      >
+                        {product.name}
+                      </Link>
+                    </li>
+                  ))}
+                </ul>
+              ) : (
+                <p className="text-muted mb-0" style={{ fontSize: '0.9rem' }}>
+                  No products found for &quot;{searchTerm.trim()}&quot;.
+                </p>
+              )}
+            </div>
+          )}
 
           <h5 className="cat-list-title">Browse Categories</h5>
           <ul className="cat-list">
@@ -114,7 +177,7 @@ export default function Header() {
             <li className="cat-list-item"><Link href="/sarees?type=patola" title="Patola Sarees">Patola Sarees</Link></li>
             <li className="cat-list-item"><Link href="/sarees?type=wedding" title="Wedding Sarees">Wedding Sarees</Link></li>
             <li className="cat-list-item"><Link href="/sarees?type=party" title="Party Wear Sarees">Party Wear Sarees</Link></li>
-            <li className="cat-list-item"><Link href="/sarees?type=suit" title="Suit">Suit</Link></li>
+            <li className="cat-list-item"><Link href="/suit" title="Suit">Suit</Link></li>
           </ul>
         </div>
       </div>
@@ -192,19 +255,26 @@ export default function Header() {
               />
             </Link>
 
-            {/* Mobile Icons - Right */}
+            {/* Mobile Icons - Right: Track, Cart */}
             <div className="d-flex align-items-center gap-2" style={{ order: 3 }}>
-              <Link href="/wishlist" className="d-flex align-items-center position-relative">
+              <Link
+                href="/track-order"
+                className="d-flex align-items-center swatika-header-icon-link"
+                title="Track order"
+                aria-label="Track order"
+              >
                 <svg width="20" height="20" viewBox="0 0 24 24">
-                  <use xlinkHref="#heart"></use>
+                  <use xlinkHref="#package-search"></use>
                 </svg>
-                {wishlistCount > 0 && (
-                  <span className="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger">
-                    {wishlistCount}
-                  </span>
-                )}
               </Link>
-              <a href="#" className="d-flex align-items-center position-relative" onClick={(e) => { e.preventDefault(); setIsCartOpen(true); }}>
+              <a
+                href="#"
+                className="d-flex align-items-center position-relative swatika-header-icon-link"
+                onClick={(e) => {
+                  e.preventDefault();
+                  setIsCartOpen(true);
+                }}
+              >
                 <svg width="20" height="20" viewBox="0 0 24 24">
                   <use xlinkHref="#cart"></use>
                 </svg>
@@ -240,13 +310,17 @@ export default function Header() {
           <div className="navbar-collapse justify-content-center d-none d-lg-flex">
             <ul className="navbar-nav gap-4">
               <li className="nav-item">
-                <Link className="nav-link active" href="/" style={{ fontSize: '1rem' }}>Home</Link>
+                <Link className="nav-link active" href="/" style={navFontStyle}>
+                  Home
+                </Link>
               </li>
               <li className="nav-item">
-                <Link className="nav-link" href="/about" style={{ fontSize: '1rem' }}>About Us</Link>
+                <Link className="nav-link" href="/about" style={navFontStyle}>
+                  About Us
+                </Link>
               </li>
               <li className="nav-item">
-              <Link className="nav-link" href="/sarees" style={{ fontSize: '1rem' }}>
+                <Link className="nav-link" href="/sarees" style={navFontStyle}>
                   Sarees
                 </Link>
                 {/* <ul className="dropdown-menu" aria-labelledby="dropdownSarees">
@@ -260,7 +334,9 @@ export default function Header() {
                 </ul> */}
               </li>
               <li className="nav-item">
-                <Link className="nav-link" href="/sarees?type=suit" style={{ fontSize: '1rem' }}>Suit</Link>
+                <Link className="nav-link" href="/suit" style={navFontStyle}>
+                  Suit
+                </Link>
               </li>
               {/* <li className="nav-item">
                 <Link className="nav-link" href="/contact" style={{ fontSize: '1rem' }}>Contact</Link>
@@ -277,13 +353,23 @@ export default function Header() {
             <div className="offcanvas-body">
               <ul className="navbar-nav gap-1">
                 <li className="nav-item">
-                  <Link className="nav-link active" href="/" style={{ fontSize: 'clamp(0.85rem, 2vw, 1rem)' }}>Home</Link>
+                  <Link className="nav-link active" href="/" style={{ ...navFontStyle, fontSize: 'clamp(0.85rem, 2vw, 0.95rem)' }}>
+                    Home
+                  </Link>
                 </li>
                 <li className="nav-item">
-                  <Link className="nav-link" href="/about" style={{ fontSize: 'clamp(0.85rem, 2vw, 1rem)' }}>About Us</Link>
+                  <Link className="nav-link" href="/about" style={{ ...navFontStyle, fontSize: 'clamp(0.85rem, 2vw, 0.95rem)' }}>
+                    About Us
+                  </Link>
                 </li>
                 <li className="nav-item ">
-                  <Link className="nav-link " href="/sarees" id="dropdownSareesMobile"  aria-expanded="false" style={{ fontSize: 'clamp(0.85rem, 2vw, 1rem)' }}>
+                  <Link
+                    className="nav-link "
+                    href="/sarees"
+                    id="dropdownSareesMobile"
+                    aria-expanded="false"
+                    style={{ ...navFontStyle, fontSize: 'clamp(0.85rem, 2vw, 0.95rem)' }}
+                  >
                     Sarees
                   </Link>
                   {/* <ul className="dropdown-menu" aria-labelledby="dropdownSareesMobile">
@@ -297,7 +383,14 @@ export default function Header() {
                   </ul> */}
                 </li>
                 <li className="nav-item">
-                  <Link className="nav-link" href="/sarees?type=suit" style={{ fontSize: 'clamp(0.85rem, 2vw, 1rem)' }}>Suit</Link>
+                  <Link className="nav-link" href="/suit" style={{ ...navFontStyle, fontSize: 'clamp(0.85rem, 2vw, 0.95rem)' }}>
+                    Suit
+                  </Link>
+                </li>
+                <li className="nav-item">
+                  <Link className="nav-link" href="/track-order" style={{ ...navFontStyle, fontSize: 'clamp(0.85rem, 2vw, 0.95rem)' }}>
+                    Track order
+                  </Link>
                 </li>
                 {/* <li className="nav-item">
                   <Link className="nav-link" href="/contact" style={{ fontSize: 'clamp(0.85rem, 2vw, 1rem)' }}>Contact</Link>
@@ -306,21 +399,41 @@ export default function Header() {
             </div>
           </div>
 
-          {/* Desktop Icons - Right */}
+          {/* Desktop Icons - Right: Track order, Cart, Search */}
           <div className="d-none d-lg-flex align-items-center ms-auto">
             <ul className="list-unstyled d-flex m-0 align-items-center gap-3">
               <li>
-                <Link href="/wishlist" className="text-uppercase text-decoration-none text-dark" style={{ fontSize: '0.95rem', whiteSpace: 'nowrap' }}>
-                  Wishlist <span className="wishlist-count">({wishlistCount})</span>
+                <Link
+                  href="/track-order"
+                  className="text-uppercase text-decoration-none swatika-header-utility"
+                  style={{ ...navFontStyle, whiteSpace: 'nowrap' }}
+                >
+                  Track order
                 </Link>
               </li>
               <li>
-                <a href="#" className="text-uppercase text-decoration-none text-dark" onClick={(e) => { e.preventDefault(); setIsCartOpen(true); }} style={{ fontSize: '0.95rem', whiteSpace: 'nowrap', cursor: 'pointer' }}>
+                <a
+                  href="#"
+                  className="text-uppercase text-decoration-none swatika-header-utility"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    setIsCartOpen(true);
+                  }}
+                  style={{ ...navFontStyle, whiteSpace: 'nowrap', cursor: 'pointer' }}
+                >
                   Cart <span className="cart-count">({cartCount})</span>
                 </a>
               </li>
               <li className="search-box">
-                <a href="#search" className="search-button d-flex align-items-center" onClick={(e) => { e.preventDefault(); setIsSearchOpen(!isSearchOpen); }}>
+                <a
+                  href="#search"
+                  className="search-button d-flex align-items-center swatika-header-utility"
+                  style={{ color: navFontStyle.color }}
+                  onClick={(e) => {
+                    e.preventDefault();
+                    setIsSearchOpen(!isSearchOpen);
+                  }}
+                >
                   <svg width="20" height="20" viewBox="0 0 24 24">
                     <use xlinkHref="#search"></use>
                   </svg>
@@ -330,6 +443,38 @@ export default function Header() {
           </div>
         </div>
       </nav>
+
+      <style jsx global>{`
+        nav.sticky-header .navbar-brand {
+          transition: opacity 0.22s ease;
+        }
+        nav.sticky-header .navbar-brand:hover {
+          opacity: 0.88;
+        }
+        nav.sticky-header .navbar-nav .nav-link:hover {
+          color: #dc747d !important;
+        }
+        nav.sticky-header .navbar-nav .nav-link {
+          transition: color 0.22s ease;
+        }
+        nav.sticky-header .swatika-header-utility:hover {
+          color: #dc747d !important;
+        }
+        nav.sticky-header .swatika-header-utility {
+          transition: color 0.22s ease;
+        }
+        nav.sticky-header .swatika-header-icon-link {
+          color: #111;
+          transition: color 0.22s ease, transform 0.22s ease;
+        }
+        nav.sticky-header .swatika-header-icon-link:hover {
+          color: #dc747d !important;
+          transform: scale(1.08);
+        }
+        nav.sticky-header .swatika-header-icon-link svg {
+          fill: currentColor;
+        }
+      `}</style>
     </>
   );
 }

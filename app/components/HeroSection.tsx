@@ -12,6 +12,8 @@ import 'swiper/css/pagination';
 import 'swiper/css/navigation';
 
 const instaImg = (hash: string) => getProductImageByHash(hash);
+const toCheckoutHref = (productId: number, productName: string) =>
+  `/checkout?productId=${productId}&product=${encodeURIComponent(productName)}`;
 
 export default function HeroSection() {
   return (
@@ -53,7 +55,7 @@ export default function HeroSection() {
               <SwiperSlide>
                 <div className="banner-item image-zoom-effect">
                   <div className="image-holder position-relative" style={{ height: 'clamp(300px, 60vw, 500px)', overflow: 'hidden' }}>
-                    <Link href="/sarees/7">
+                    <Link href={toCheckoutHref(7, 'Cream Saree – Pink Border')}>
                       <Image
                         src={instaImg('ba76809e38182a59fc059fd1b5ff8d54fbef1671671d7dc2d45e60da014280e0')}
                         alt="Cream Saree with Vibrant Pink Border"
@@ -66,7 +68,7 @@ export default function HeroSection() {
                   </div>
                   <div className="banner-content py-3 py-md-4 px-2 px-md-0">
                     <h5 className="element-title text-uppercase" style={{ fontSize: 'clamp(0.9rem, 3vw, 1.25rem)' }}>
-                      <Link href="/sarees/7" className="item-anchor">Cream Saree – Pink Border</Link>
+                      <Link href={toCheckoutHref(7, 'Cream Saree – Pink Border')} className="item-anchor">Cream Saree – Pink Border</Link>
                     </h5>
                     <p className="d-none d-md-block" style={{ fontSize: 'clamp(0.85rem, 2vw, 1rem)' }}>Classic cream base meets a striking pink border and ornate motif detailing—ideal for wedding rituals and special occasions. ₹11,000</p>
                     <div className="btn-left">
@@ -78,7 +80,7 @@ export default function HeroSection() {
               <SwiperSlide>
                 <div className="banner-item image-zoom-effect">
                   <div className="image-holder position-relative" style={{ height: 'clamp(300px, 60vw, 500px)', overflow: 'hidden' }}>
-                    <Link href="/sarees/40">
+                    <Link href={toCheckoutHref(40, 'Patola Silk Saree')}>
                       <Image
                         src={instaImg('d572b2ddeebc5c37c8eb4c63deb69e10c3543589c62374ec45558d4217058267')}
                         alt="Patola Silk Saree"
@@ -91,7 +93,7 @@ export default function HeroSection() {
                   </div>
                   <div className="banner-content py-3 py-md-4 px-2 px-md-0">
                     <h5 className="element-title text-uppercase" style={{ fontSize: 'clamp(0.9rem, 3vw, 1.25rem)' }}>
-                      <Link href="/sarees/40" className="item-anchor">Patola Silk Saree</Link>
+                      <Link href={toCheckoutHref(40, 'Patola Silk Saree')} className="item-anchor">Patola Silk Saree</Link>
                     </h5>
                     <p className="d-none d-md-block" style={{ fontSize: 'clamp(0.85rem, 2vw, 1rem)' }}>Stunning Patola silk saree with intricate traditional patterns, vibrant red base and contrasting golden border. ₹6,000</p>
                     <div className="btn-left">
@@ -103,7 +105,7 @@ export default function HeroSection() {
               <SwiperSlide>
                 <div className="banner-item image-zoom-effect">
                   <div className="image-holder position-relative" style={{ height: 'clamp(300px, 60vw, 500px)', overflow: 'hidden' }}>
-                    <Link href="/sarees/18">
+                    <Link href={toCheckoutHref(18, 'Tissue Silk Saree')}>
                       <Image
                         src={instaImg('33b3c5ac84e7f428324c6d67f6a7f0732598ee87e26a0b165e594c3932725ac9')}
                         alt="Tissue Silk Saree"
@@ -116,7 +118,7 @@ export default function HeroSection() {
                   </div>
                   <div className="banner-content py-3 py-md-4 px-2 px-md-0">
                     <h5 className="element-title text-uppercase" style={{ fontSize: 'clamp(0.9rem, 3vw, 1.25rem)' }}>
-                      <Link href="/sarees/18" className="item-anchor">Tissue Silk Saree</Link>
+                      <Link href={toCheckoutHref(18, 'Tissue Silk Saree')} className="item-anchor">Tissue Silk Saree</Link>
                     </h5>
                     <p className="d-none d-md-block" style={{ fontSize: 'clamp(0.85rem, 2vw, 1rem)' }}>Luxurious tissue silk saree with a graceful silhouette and subtle natural sheen—perfect for weddings and festive celebrations. ₹4,999</p>
                     <div className="btn-left">
@@ -128,7 +130,7 @@ export default function HeroSection() {
               <SwiperSlide>
                 <div className="banner-item image-zoom-effect">
                   <div className="image-holder position-relative" style={{ height: 'clamp(300px, 60vw, 500px)', overflow: 'hidden' }}>
-                    <Link href="/sarees/5">
+                    <Link href={toCheckoutHref(5, 'Net Embellished Saree')}>
                       <Image
                         src={instaImg('46a257b9b9f758da7849f836bf71346d414778c4382aac9c626a44c1c91301b9')}
                         alt="Net Embellished Saree"
@@ -140,7 +142,7 @@ export default function HeroSection() {
                   </div>
                   <div className="banner-content py-3 py-md-4 px-2 px-md-0">
                     <h5 className="element-title text-uppercase" style={{ fontSize: 'clamp(0.9rem, 3vw, 1.25rem)' }}>
-                      <Link href="/sarees/5" className="item-anchor">Net Embellished Saree</Link>
+                      <Link href={toCheckoutHref(5, 'Net Embellished Saree')} className="item-anchor">Net Embellished Saree</Link>
                     </h5>
                     <p className="d-none d-md-block" style={{ fontSize: 'clamp(0.85rem, 2vw, 1rem)' }}>Seafoam saree with detailed embroidered border and sequin work for a refined shine. Sophisticated for weddings and evening celebrations. ₹8,000</p>
                     <div className="btn-left">
@@ -152,7 +154,7 @@ export default function HeroSection() {
               <SwiperSlide>
                 <div className="banner-item image-zoom-effect">
                   <div className="image-holder position-relative" style={{ height: 'clamp(300px, 60vw, 500px)', overflow: 'hidden' }}>
-                    <Link href="/sarees/6">
+                    <Link href={toCheckoutHref(6, 'Rust Orange Silk Saree')}>
                       <Image
                         src={instaImg('b9606fa353f07c69822a7f45e9dff88435ded645dc85564219b7027cf3b5ac5f')}
                         alt="Rust Orange Silk Saree"
@@ -164,7 +166,7 @@ export default function HeroSection() {
                   </div>
                   <div className="banner-content py-3 py-md-4 px-2 px-md-0">
                     <h5 className="element-title text-uppercase" style={{ fontSize: 'clamp(0.9rem, 3vw, 1.25rem)' }}>
-                      <Link href="/sarees/6" className="item-anchor">Rust Orange Silk Saree</Link>
+                      <Link href={toCheckoutHref(6, 'Rust Orange Silk Saree')} className="item-anchor">Rust Orange Silk Saree</Link>
                     </h5>
                     <p className="d-none d-md-block" style={{ fontSize: 'clamp(0.85rem, 2vw, 1rem)' }}>Rich rust-orange saree with bandhani-inspired pattern and standout metallic pallu—perfect for cultural events and wedding functions. ₹4,500</p>
                     <div className="btn-left">
@@ -176,7 +178,7 @@ export default function HeroSection() {
               <SwiperSlide>
                 <div className="banner-item image-zoom-effect">
                   <div className="image-holder position-relative" style={{ height: 'clamp(300px, 60vw, 500px)', overflow: 'hidden' }}>
-                    <Link href="/sarees/35">
+                    <Link href={toCheckoutHref(35, 'Stone Work Net Saree')}>
                       <Image
                         src={instaImg('8f984c7487be2c119a063599ec22580bfdb5b1a3476cd89793531fe8ddc9c3a6')}
                         alt="Stone Work Net Saree"
@@ -188,7 +190,7 @@ export default function HeroSection() {
                   </div>
                   <div className="banner-content py-3 py-md-4 px-2 px-md-0">
                     <h5 className="element-title text-uppercase" style={{ fontSize: 'clamp(0.9rem, 3vw, 1.25rem)' }}>
-                      <Link href="/sarees/35" className="item-anchor">Stone Work Net Saree</Link>
+                      <Link href={toCheckoutHref(35, 'Stone Work Net Saree')} className="item-anchor">Stone Work Net Saree</Link>
                     </h5>
                     <p className="d-none d-md-block" style={{ fontSize: 'clamp(0.85rem, 2vw, 1rem)' }}>Graceful net saree adorned with intricate stone work and elegant detailing—designed for luxurious sparkle at weddings and receptions. ₹11,000</p>
                     <div className="btn-left">

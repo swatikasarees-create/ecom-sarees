@@ -1,57 +1,104 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo, useRef } from 'react';
 import Image from 'next/image';
+import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
-import { products, Product, getUniqueCategories, getUniqueFabrics } from '../lib/productData';
-import { addToCart, addToWishlist } from '../lib/commerceStore';
+import { products, Product } from '../lib/productData';
+import { addToCart } from '../lib/commerceStore';
 
-export default function SareesContent() {
+type CatalogSection = 'sarees' | 'suit';
+
+interface SareesContentProps {
+  section?: CatalogSection;
+}
+
+export default function SareesContent({ section = 'sarees' }: SareesContentProps) {
   const searchParams = useSearchParams();
   const typeParam = searchParams.get('type');
+  const isSuitSection = section === 'suit';
 
-  const [filteredProducts, setFilteredProducts] = useState<Product[]>(products);
-  const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
+  const sectionProducts = useMemo(
+    () =>
+      isSuitSection
+        ? products.filter((product) => product.category === 'Suit')
+        : products.filter((product) => product.category !== 'Suit'),
+    [isSuitSection]
+  );
+
+  const categoryOptions = useMemo(
+    () => [...new Set(sectionProducts.map((product) => product.category))].sort(),
+    [sectionProducts]
+  );
+
+  const fabricOptions = useMemo(
+    () => [...new Set(sectionProducts.map((product) => product.fabric))].sort(),
+    [sectionProducts]
+  );
+
+  const [filteredProducts, setFilteredProducts] = useState<Product[]>(sectionProducts);
+  const [selectedCategories, setSelectedCategories] = useState<string[]>(isSuitSection ? ['Suit'] : []);
   const [selectedFabrics, setSelectedFabrics] = useState<string[]>([]);
   const [priceRange, setPriceRange] = useState<[number, number]>([0, 15000]);
   const [sortBy, setSortBy] = useState<string>('date-new');
   const [gridColumns, setGridColumns] = useState<number>(3);
   const [showFilters, setShowFilters] = useState<boolean>(false);
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
+  const [zoomLevel, setZoomLevel] = useState(1);
+  const [panPosition, setPanPosition] = useState({ x: 0, y: 0 });
+  const [isDraggingImage, setIsDraggingImage] = useState(false);
+  const imageViewportRef = useRef<HTMLDivElement | null>(null);
+  const dragStateRef = useRef<{
+    pointerId: number;
+    startX: number;
+    startY: number;
+    startPanX: number;
+    startPanY: number;
+  } | null>(null);
 
   useEffect(() => {
-    if (typeParam) {
-      const categoryMap: { [key: string]: string } = {
-        'designer': 'Designer Sarees',
-        'silk': 'Silk Sarees',
-        'cotton': 'Cotton Sarees',
-        'georgette': 'Georgette Sarees',
-        'chiffon': 'Chiffon Sarees',
-        'banarasi': 'Banarasi Sarees',
-        'patola': 'Patola Sarees',
-        'wedding': 'Wedding Sarees',
-        'party': 'Party Wear Sarees',
-        'suit': 'Suit',
-      };
-      const category = categoryMap[typeParam];
-      if (category) {
-        setSelectedCategories([category]);
-      }
+    if (isSuitSection) {
+      setSelectedCategories(['Suit']);
+      return;
     }
-  }, [typeParam]);
+
+    if (!typeParam) {
+      setSelectedCategories([]);
+      return;
+    }
+
+    const categoryMap: { [key: string]: string } = {
+      designer: 'Designer Sarees',
+      silk: 'Silk Sarees',
+      cotton: 'Cotton Sarees',
+      georgette: 'Georgette Sarees',
+      chiffon: 'Chiffon Sarees',
+      banarasi: 'Banarasi Sarees',
+      patola: 'Patola Sarees',
+      wedding: 'Wedding Sarees',
+      party: 'Party Wear Sarees',
+    };
+    const category = categoryMap[typeParam];
+    if (category && categoryOptions.includes(category)) {
+      setSelectedCategories([category]);
+      return;
+    }
+
+    setSelectedCategories([]);
+  }, [categoryOptions, isSuitSection, typeParam]);
 
   useEffect(() => {
-    let filtered = [...products];
+    let filtered = [...sectionProducts];
 
     if (selectedCategories.length > 0) {
-      filtered = filtered.filter(p => selectedCategories.includes(p.category));
+      filtered = filtered.filter((product) => selectedCategories.includes(product.category));
     }
 
     if (selectedFabrics.length > 0) {
-      filtered = filtered.filter(p => selectedFabrics.includes(p.fabric));
+      filtered = filtered.filter((product) => selectedFabrics.includes(product.fabric));
     }
 
-    filtered = filtered.filter(p => p.price >= priceRange[0] && p.price <= priceRange[1]);
+    filtered = filtered.filter((product) => product.price >= priceRange[0] && product.price <= priceRange[1]);
 
     switch (sortBy) {
       case 'price-low':
@@ -67,15 +114,18 @@ export default function SareesContent() {
         filtered.sort((a, b) => b.name.localeCompare(a.name));
         break;
       default:
-        // date-new (default order from data)
         break;
     }
 
     setFilteredProducts(filtered);
-  }, [selectedCategories, selectedFabrics, priceRange, sortBy]);
+  }, [priceRange, sectionProducts, selectedCategories, selectedFabrics, sortBy]);
 
   useEffect(() => {
     if (!selectedProduct) return;
+    setZoomLevel(1);
+    setPanPosition({ x: 0, y: 0 });
+    setIsDraggingImage(false);
+    dragStateRef.current = null;
     const onEscape = (event: KeyboardEvent) => {
       if (event.key === 'Escape') {
         setSelectedProduct(null);
@@ -91,14 +141,14 @@ export default function SareesContent() {
     value: string
   ) => {
     if (filterArray.includes(value)) {
-      setFilterArray(filterArray.filter(item => item !== value));
+      setFilterArray(filterArray.filter((item) => item !== value));
     } else {
       setFilterArray([...filterArray, value]);
     }
   };
 
   const clearAllFilters = () => {
-    setSelectedCategories([]);
+    setSelectedCategories(isSuitSection ? ['Suit'] : []);
     setSelectedFabrics([]);
     setPriceRange([0, 15000]);
   };
@@ -112,22 +162,60 @@ export default function SareesContent() {
     });
   };
 
-  const handleAddToWishlist = (product: Product) => {
-    addToWishlist({
-      id: String(product.id),
-      name: product.name,
-      price: product.price,
-      image: product.image,
-    });
+  const shopNowHref = (product: Product) =>
+    `/checkout?productId=${encodeURIComponent(String(product.id))}&product=${encodeURIComponent(product.name)}`;
+
+  const clampPan = (x: number, y: number, zoom = zoomLevel) => {
+    if (!imageViewportRef.current || zoom <= 1) {
+      return { x: 0, y: 0 };
+    }
+    const viewportWidth = imageViewportRef.current.clientWidth;
+    const viewportHeight = imageViewportRef.current.clientHeight;
+    const maxX = ((zoom - 1) * viewportWidth) / 2;
+    const maxY = ((zoom - 1) * viewportHeight) / 2;
+    return {
+      x: Math.max(-maxX, Math.min(maxX, x)),
+      y: Math.max(-maxY, Math.min(maxY, y)),
+    };
+  };
+
+  const onImagePointerDown = (event: React.PointerEvent<HTMLDivElement>) => {
+    const targetElement = event.target as HTMLElement;
+    if (targetElement.closest('button')) return;
+    if (zoomLevel <= 1) return;
+    if (event.pointerType === 'mouse' && event.button !== 0) return;
+    event.preventDefault();
+    dragStateRef.current = {
+      pointerId: event.pointerId,
+      startX: event.clientX,
+      startY: event.clientY,
+      startPanX: panPosition.x,
+      startPanY: panPosition.y,
+    };
+    setIsDraggingImage(true);
+    event.currentTarget.setPointerCapture(event.pointerId);
+  };
+
+  const onImagePointerMove = (event: React.PointerEvent<HTMLDivElement>) => {
+    if (!dragStateRef.current || dragStateRef.current.pointerId !== event.pointerId) return;
+    const deltaX = event.clientX - dragStateRef.current.startX;
+    const deltaY = event.clientY - dragStateRef.current.startY;
+    setPanPosition(
+      clampPan(dragStateRef.current.startPanX + deltaX, dragStateRef.current.startPanY + deltaY)
+    );
+  };
+
+  const endImageDrag = () => {
+    dragStateRef.current = null;
+    setIsDraggingImage(false);
   };
 
   return (
     <div className="container-fluid py-3 py-md-5">
       <div className="row">
-        {/* Mobile Filter Button */}
         <div className="col-12 d-md-none mb-3">
-          <button 
-            className="btn btn-outline-dark w-100" 
+          <button
+            className="btn btn-outline-dark w-100"
             onClick={() => setShowFilters(!showFilters)}
             style={{ fontSize: 'clamp(0.85rem, 2vw, 1rem)' }}
           >
@@ -135,19 +223,25 @@ export default function SareesContent() {
           </button>
         </div>
 
-        {/* Filter Sidebar */}
         <div className={`col-lg-3 col-md-4 ${showFilters ? '' : 'd-none d-md-block'}`}>
           <div className="filter-sidebar mb-4 mb-md-0" style={{ position: 'sticky', top: '20px' }}>
             <div className="d-flex justify-content-between align-items-center mb-3 mb-md-4 px-2 px-md-0">
-              <h4 className="mb-0" style={{ fontSize: 'clamp(1.1rem, 3vw, 1.5rem)' }}>Filters</h4>
-              <button className="btn btn-sm btn-outline-secondary" onClick={clearAllFilters} style={{ fontSize: 'clamp(0.75rem, 2vw, 0.875rem)' }}>
+              <h4 className="mb-0" style={{ fontSize: 'clamp(1.1rem, 3vw, 1.5rem)' }}>
+                Filters
+              </h4>
+              <button
+                className="btn btn-sm btn-outline-secondary"
+                onClick={clearAllFilters}
+                style={{ fontSize: 'clamp(0.75rem, 2vw, 0.875rem)' }}
+              >
                 Clear All
               </button>
             </div>
 
-            {/* Price Filter */}
             <div className="filter-section mb-3 mb-md-4 px-2 px-md-0">
-              <h5 className="filter-title mb-2 mb-md-3" style={{ fontSize: 'clamp(0.95rem, 2.5vw, 1.25rem)' }}>Price</h5>
+              <h5 className="filter-title mb-2 mb-md-3" style={{ fontSize: 'clamp(0.95rem, 2.5vw, 1.25rem)' }}>
+                Price
+              </h5>
               <div className="filter-options">
                 <div className="d-flex justify-content-between mb-2">
                   <span>₹{priceRange[0]}</span>
@@ -160,16 +254,17 @@ export default function SareesContent() {
                   max="15000"
                   step="250"
                   value={priceRange[1]}
-                  onChange={(e) => setPriceRange([0, parseInt(e.target.value)])}
+                  onChange={(event) => setPriceRange([0, parseInt(event.target.value, 10)])}
                 />
               </div>
             </div>
 
-            {/* Category Filter */}
             <div className="filter-section mb-3 mb-md-4 px-2 px-md-0">
-              <h5 className="filter-title mb-2 mb-md-3" style={{ fontSize: 'clamp(0.95rem, 2.5vw, 1.25rem)' }}>Category</h5>
+              <h5 className="filter-title mb-2 mb-md-3" style={{ fontSize: 'clamp(0.95rem, 2.5vw, 1.25rem)' }}>
+                Category
+              </h5>
               <div className="filter-options" style={{ maxHeight: '300px', overflowY: 'auto' }}>
-                {getUniqueCategories().map(category => (
+                {categoryOptions.map((category) => (
                   <div key={category} className="form-check mb-2">
                     <input
                       className="form-check-input"
@@ -187,9 +282,11 @@ export default function SareesContent() {
             </div>
 
             <div className="filter-section mb-3 mb-md-4 px-2 px-md-0">
-              <h5 className="filter-title mb-2 mb-md-3" style={{ fontSize: 'clamp(0.95rem, 2.5vw, 1.25rem)' }}>Fabric</h5>
+              <h5 className="filter-title mb-2 mb-md-3" style={{ fontSize: 'clamp(0.95rem, 2.5vw, 1.25rem)' }}>
+                Fabric
+              </h5>
               <div className="filter-options">
-                {getUniqueFabrics().map(fabric => (
+                {fabricOptions.map((fabric) => (
                   <div key={fabric} className="form-check mb-2">
                     <input
                       className="form-check-input"
@@ -208,18 +305,17 @@ export default function SareesContent() {
           </div>
         </div>
 
-        {/* Product Grid */}
         <div className="col-lg-9 col-md-8">
-          {/* Toolbar */}
           <div className="d-flex flex-wrap justify-content-between align-items-center mb-3 mb-md-4 px-2 px-md-0 gap-3">
-            <h2 style={{ fontSize: 'clamp(1.3rem, 4vw, 2rem)', marginBottom: '0' }}>All Products</h2>
+            <h2 style={{ fontSize: 'clamp(1.3rem, 4vw, 2rem)', marginBottom: '0' }}>
+              {isSuitSection ? 'Suit Collection' : 'Saree Collection'}
+            </h2>
             <div className="d-flex gap-2 gap-md-3 align-items-center flex-wrap">
-              {/* Sort Dropdown */}
-              <select 
-                className="form-select form-select-sm" 
+              <select
+                className="form-select form-select-sm"
                 style={{ width: 'auto', fontSize: 'clamp(0.75rem, 2vw, 0.95rem)' }}
                 value={sortBy}
-                onChange={(e) => setSortBy(e.target.value)}
+                onChange={(event) => setSortBy(event.target.value)}
               >
                 <option value="date-new">Date, new to old</option>
                 <option value="price-low">Price, low to high</option>
@@ -228,78 +324,39 @@ export default function SareesContent() {
                 <option value="name-desc">Name, Z to A</option>
               </select>
 
-              {/* Grid Layout Buttons - Hidden on mobile */}
               <div className="btn-group d-none d-md-flex" role="group">
-                <button 
-                  className={`btn btn-sm btn-outline-secondary ${gridColumns === 1 ? 'active' : ''}`}
-                  onClick={() => setGridColumns(1)}
-                  style={{ fontSize: '0.85rem' }}
-                >
-                  ☰
-                </button>
-                <button 
-                  className={`btn btn-sm btn-outline-secondary ${gridColumns === 2 ? 'active' : ''}`}
-                  onClick={() => setGridColumns(2)}
-                  style={{ fontSize: '0.85rem' }}
-                >
-                  ▦
-                </button>
-                <button 
-                  className={`btn btn-sm btn-outline-secondary ${gridColumns === 3 ? 'active' : ''}`}
-                  onClick={() => setGridColumns(3)}
-                  style={{ fontSize: '0.85rem' }}
-                >
-                  ▦▦
-                </button>
-                <button 
-                  className={`btn btn-sm btn-outline-secondary ${gridColumns === 4 ? 'active' : ''}`}
-                  onClick={() => setGridColumns(4)}
-                  style={{ fontSize: '0.85rem' }}
-                >
-                  ▦▦▦
-                </button>
-                <button 
-                  className={`btn btn-sm btn-outline-secondary ${gridColumns === 5 ? 'active' : ''}`}
-                  onClick={() => setGridColumns(5)}
-                  style={{ fontSize: '0.85rem' }}
-                >
-                  ▦▦▦▦
-                </button>
+                <button className={`btn btn-sm btn-outline-secondary ${gridColumns === 1 ? 'active' : ''}`} onClick={() => setGridColumns(1)} style={{ fontSize: '0.85rem' }}>☰</button>
+                <button className={`btn btn-sm btn-outline-secondary ${gridColumns === 2 ? 'active' : ''}`} onClick={() => setGridColumns(2)} style={{ fontSize: '0.85rem' }}>▦</button>
+                <button className={`btn btn-sm btn-outline-secondary ${gridColumns === 3 ? 'active' : ''}`} onClick={() => setGridColumns(3)} style={{ fontSize: '0.85rem' }}>▦▦</button>
+                <button className={`btn btn-sm btn-outline-secondary ${gridColumns === 4 ? 'active' : ''}`} onClick={() => setGridColumns(4)} style={{ fontSize: '0.85rem' }}>▦▦▦</button>
+                <button className={`btn btn-sm btn-outline-secondary ${gridColumns === 5 ? 'active' : ''}`} onClick={() => setGridColumns(5)} style={{ fontSize: '0.85rem' }}>▦▦▦▦</button>
               </div>
             </div>
           </div>
 
-          {/* Products Count */}
-          <p className="text-muted mb-3 mb-md-4 px-2 px-md-0" style={{ fontSize: 'clamp(0.85rem, 2vw, 1rem)' }}>{filteredProducts.length} products</p>
+          <p className="text-muted mb-3 mb-md-4 px-2 px-md-0" style={{ fontSize: 'clamp(0.85rem, 2vw, 1rem)' }}>
+            {filteredProducts.length} products
+          </p>
 
-          {/* Product Grid */}
           <div className={`row row-cols-2 row-cols-md-${Math.min(gridColumns, 3)} row-cols-lg-${gridColumns} g-3 g-md-4 px-2 px-md-0`}>
             {filteredProducts.map((product) => (
               <div key={product.id} className="col">
                 <div className="card h-100 border-0 shadow-sm product-card" style={{ transition: 'transform 0.3s' }}
-                     onMouseEnter={(e) => e.currentTarget.style.transform = 'translateY(-5px)'}
-                     onMouseLeave={(e) => e.currentTarget.style.transform = 'translateY(0)'}>
+                  onMouseEnter={(event) => (event.currentTarget.style.transform = 'translateY(-5px)')}
+                  onMouseLeave={(event) => (event.currentTarget.style.transform = 'translateY(0)')}
+                >
                   <div
                     className="text-decoration-none w-100 text-start"
                     role="button"
                     tabIndex={0}
                     onClick={() => setSelectedProduct(product)}
                     onKeyDown={(event) => {
-                      if (event.key === 'Enter' || event.key === ' ') {
-                        setSelectedProduct(product);
-                      }
+                      if (event.key === 'Enter' || event.key === ' ') setSelectedProduct(product);
                     }}
-                    style={{ cursor: 'zoom-in' }}
+                    style={{ cursor: 'pointer' }}
                   >
                     <div className="position-relative overflow-hidden" style={{ aspectRatio: '3/4' }}>
-                      <Image
-                        src={product.image}
-                        alt={product.name}
-                        fill
-                        style={{ objectFit: 'cover', objectPosition: 'center top' }}
-                        className="product-image"
-                        unoptimized
-                      />
+                      <Image src={product.image} alt={product.name} fill style={{ objectFit: 'cover', objectPosition: 'center top' }} className="product-image" unoptimized />
                       {product.originalPrice && (
                         <span className="badge bg-danger position-absolute top-0 start-0 m-2">
                           Save {Math.round(((product.originalPrice - product.price) / product.originalPrice) * 100)}%
@@ -320,28 +377,16 @@ export default function SareesContent() {
                         )}
                       </div>
                       <div className="d-flex gap-2 mt-3">
-                        <button
-                          type="button"
-                          className="btn btn-sm btn-dark flex-fill"
-                          onClick={(e) => {
-                            e.preventDefault();
-                            e.stopPropagation();
-                            handleAddToCart(product);
-                          }}
-                        >
+                        <button type="button" className="btn btn-sm btn-dark flex-fill" onClick={(event) => { event.preventDefault(); event.stopPropagation(); handleAddToCart(product); }}>
                           Add to Cart
                         </button>
-                        <button
-                          type="button"
+                        <Link
+                          href={shopNowHref(product)}
                           className="btn btn-sm btn-outline-dark flex-fill"
-                          onClick={(e) => {
-                            e.preventDefault();
-                            e.stopPropagation();
-                            handleAddToWishlist(product);
-                          }}
+                          onClick={(event) => event.stopPropagation()}
                         >
-                          Wishlist
-                        </button>
+                          Shop now
+                        </Link>
                       </div>
                     </div>
                   </div>
@@ -350,14 +395,11 @@ export default function SareesContent() {
             ))}
           </div>
 
-          {/* No Products Found */}
           {filteredProducts.length === 0 && (
             <div className="text-center py-5">
               <h4>No products found</h4>
               <p className="text-muted">Try adjusting your filters</p>
-              <button className="btn btn-primary" onClick={clearAllFilters}>
-                Clear All Filters
-              </button>
+              <button className="btn btn-primary" onClick={clearAllFilters}>Clear All Filters</button>
             </div>
           )}
         </div>
@@ -399,26 +441,91 @@ export default function SareesContent() {
           >
             <div className="row g-0">
               <div className="col-md-6">
-                <div style={{ position: 'relative', width: '100%', minHeight: '55vh' }}>
-                  <Image
-                    src={selectedProduct.image}
-                    alt={selectedProduct.name}
-                    fill
-                    style={{ objectFit: 'cover', objectPosition: 'center top' }}
-                    unoptimized
-                  />
+                <div
+                  ref={imageViewportRef}
+                  onPointerDown={onImagePointerDown}
+                  onPointerMove={onImagePointerMove}
+                  onPointerUp={endImageDrag}
+                  onPointerCancel={endImageDrag}
+                  style={{
+                    position: 'relative',
+                    width: '100%',
+                    minHeight: '55vh',
+                    background: '#f8f8f8',
+                    overflow: 'hidden',
+                    cursor: zoomLevel > 1 ? (isDraggingImage ? 'grabbing' : 'grab') : 'default',
+                    touchAction: zoomLevel > 1 ? 'none' : 'auto',
+                  }}
+                >
+                  <div
+                    style={{
+                      position: 'absolute',
+                      inset: 0,
+                      transform: `matrix(${zoomLevel}, 0, 0, ${zoomLevel}, ${panPosition.x}, ${panPosition.y})`,
+                      transformOrigin: 'center center',
+                      transition: 'transform 0.2s ease',
+                    }}
+                  >
+                    <Image
+                      src={selectedProduct.image}
+                      alt={selectedProduct.name}
+                      fill
+                      style={{ objectFit: 'contain', objectPosition: 'center' }}
+                      unoptimized
+                    />
+                  </div>
+
+                  <div
+                    className="badge text-bg-dark"
+                    style={{ position: 'absolute', left: 12, top: 12, zIndex: 2, fontSize: '0.8rem' }}
+                  >
+                    {zoomLevel.toFixed(1)}x
+                  </div>
+
+                  <div
+                    className="d-flex flex-column gap-2"
+                    style={{ position: 'absolute', right: 12, top: 12, zIndex: 2 }}
+                  >
+                    <button
+                      type="button"
+                      className="btn btn-light border"
+                      style={{ width: 36, height: 36, padding: 0, fontSize: '1.1rem', lineHeight: 1 }}
+                      onClick={(event) => {
+                        event.stopPropagation();
+                        setZoomLevel((prev) => {
+                          const next = Math.min(3, Number((prev + 0.2).toFixed(1)));
+                          setPanPosition((currentPan) => clampPan(currentPan.x, currentPan.y, next));
+                          return next;
+                        });
+                      }}
+                      aria-label="Zoom in"
+                    >
+                      +
+                    </button>
+                    <button
+                      type="button"
+                      className="btn btn-light border"
+                      style={{ width: 36, height: 36, padding: 0, fontSize: '1.2rem', lineHeight: 1 }}
+                      onClick={(event) => {
+                        event.stopPropagation();
+                        setZoomLevel((prev) => {
+                          const next = Math.max(1, Number((prev - 0.2).toFixed(1)));
+                          setPanPosition((currentPan) => clampPan(currentPan.x, currentPan.y, next));
+                          return next;
+                        });
+                      }}
+                      aria-label="Zoom out"
+                    >
+                      -
+                    </button>
+                  </div>
                 </div>
               </div>
               <div className="col-md-6">
                 <div className="p-3 p-md-4">
                   <div className="d-flex justify-content-between align-items-start gap-3">
                     <h4 className="mb-2">{selectedProduct.name}</h4>
-                    <button
-                      type="button"
-                      className="btn-close"
-                      onClick={() => setSelectedProduct(null)}
-                      aria-label="Close"
-                    />
+                    <button type="button" className="btn-close" onClick={() => setSelectedProduct(null)} aria-label="Close" />
                   </div>
                   <p className="text-muted mb-2">
                     {selectedProduct.category} • {selectedProduct.fabric}
@@ -432,21 +539,13 @@ export default function SareesContent() {
                     )}
                   </div>
                   <p className="text-muted mb-4">{selectedProduct.description || 'No description available.'}</p>
-                  <div className="d-flex gap-2">
-                    <button
-                      type="button"
-                      className="btn btn-dark"
-                      onClick={() => handleAddToCart(selectedProduct)}
-                    >
+                  <div className="d-flex flex-wrap gap-2">
+                    <button type="button" className="btn btn-dark" onClick={() => handleAddToCart(selectedProduct)}>
                       Add to Cart
                     </button>
-                    <button
-                      type="button"
-                      className="btn btn-outline-dark"
-                      onClick={() => handleAddToWishlist(selectedProduct)}
-                    >
-                      Wishlist
-                    </button>
+                    <Link href={shopNowHref(selectedProduct)} className="btn btn-outline-dark">
+                      Shop now
+                    </Link>
                   </div>
                 </div>
               </div>

@@ -13,7 +13,7 @@ export default function SareesPage() {
         </div>
       </div>
     }>
-      <SareesContent />
+      <SareesContent section="sarees" />
     </Suspense>
   );
 }

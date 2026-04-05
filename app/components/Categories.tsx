@@ -3,8 +3,9 @@
 import { useState } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { getProductImageByHash } from '../lib/productImage';
-import { addToCart, addToWishlist } from '../lib/commerceStore';
+import { addToCart } from '../lib/commerceStore';
 
 interface Product {
   id: number;
@@ -12,13 +13,15 @@ interface Product {
   image: string;
   price: number;
   originalPrice: number;
-  link: string;
 }
 
 const instaImg = (hash: string) => getProductImageByHash(hash);
 
 export default function Categories() {
+  const router = useRouter();
   const [activeTab, setActiveTab] = useState<'bestSellers' | 'newArrivals'>('bestSellers');
+  const getCheckoutHref = (product: Product) =>
+    `/checkout?productId=${product.id}&product=${encodeURIComponent(product.name)}`;
 
   const bestSellers: Product[] = [
     {
@@ -27,7 +30,6 @@ export default function Categories() {
       image: instaImg('ba76809e38182a59fc059fd1b5ff8d54fbef1671671d7dc2d45e60da014280e0'),
       price: 11000,
       originalPrice: 16000,
-      link: '/sarees/7'
     },
     {
       id: 31,
@@ -35,7 +37,6 @@ export default function Categories() {
       image: instaImg('b412ff6e2520e71391d64b0560de436686b29db2cb76bd68e417bbda70211003'),
       price: 12000,
       originalPrice: 18000,
-      link: '/sarees/31'
     },
     {
       id: 40,
@@ -43,7 +44,6 @@ export default function Categories() {
       image: instaImg('d572b2ddeebc5c37c8eb4c63deb69e10c3543589c62374ec45558d4217058267'),
       price: 6000,
       originalPrice: 10000,
-      link: '/sarees/40'
     }
   ];
 
@@ -54,7 +54,6 @@ export default function Categories() {
       image: instaImg('33b3c5ac84e7f428324c6d67f6a7f0732598ee87e26a0b165e594c3932725ac9'),
       price: 4999,
       originalPrice: 8000,
-      link: '/sarees/18'
     },
     {
       id: 41,
@@ -62,7 +61,6 @@ export default function Categories() {
       image: instaImg('59faa94e5e6422d3d7e99a492e212774569ccc6fe656c8d961b1a24c46a99e51'),
       price: 4500,
       originalPrice: 7000,
-      link: '/sarees/41'
     },
     {
       id: 36,
@@ -70,7 +68,6 @@ export default function Categories() {
       image: instaImg('a8873565af396d4c051d0dcdcfcd112fe4e43008361dabe2dcdcf5e0d39814e5'),
       price: 4500,
       originalPrice: 7000,
-      link: '/sarees/36'
     }
   ];
 
@@ -78,15 +75,6 @@ export default function Categories() {
 
   const addProductToCart = (product: Product) => {
     addToCart({
-      id: String(product.id),
-      name: product.name,
-      image: product.image,
-      price: product.price,
-    });
-  };
-
-  const addProductToWishlist = (product: Product) => {
-    addToWishlist({
       id: String(product.id),
       name: product.name,
       image: product.image,
@@ -181,7 +169,7 @@ export default function Categories() {
         <div className="row g-3 g-md-4" data-aos="fade-up" data-aos-delay="400">
           {displayProducts.map((product, index) => (
             <div key={product.id} className="col-12 col-md-6 col-lg-4" data-aos="fade-up" data-aos-delay={index * 100}>
-              <Link href={product.link} className="text-decoration-none">
+              <Link href={getCheckoutHref(product)} className="text-decoration-none">
                 <div
                   className="product-card"
                   style={{
@@ -308,10 +296,10 @@ export default function Categories() {
                         onClick={(e) => {
                           e.preventDefault();
                           e.stopPropagation();
-                          addProductToWishlist(product);
+                          router.push(getCheckoutHref(product));
                         }}
                       >
-                        Wishlist
+                        Shop now
                       </button>
                     </div>
                   </div>

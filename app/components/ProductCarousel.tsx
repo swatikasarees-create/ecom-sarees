@@ -4,7 +4,7 @@ import { Swiper, SwiperSlide } from 'swiper/react';
 import { Pagination, Navigation } from 'swiper/modules';
 import Image from 'next/image';
 import Link from 'next/link';
-import { addToCart, addToWishlist } from '../lib/commerceStore';
+import { addToCart } from '../lib/commerceStore';
 
 import 'swiper/css';
 import 'swiper/css/pagination';
@@ -28,6 +28,8 @@ export default function ProductCarousel({ title, products, sectionId }: ProductC
     const numeric = Number(price.replace(/[^\d]/g, ''));
     return Number.isFinite(numeric) ? numeric : 0;
   };
+  const getCheckoutHref = (product: Product) =>
+    `/checkout?productId=${product.id}&product=${encodeURIComponent(product.name)}`;
 
   return (
     <section id={sectionId} className="product-carousel py-4 py-md-5 position-relative overflow-hidden" style={{ background: '#fafafa' }}>
@@ -109,7 +111,7 @@ export default function ProductCarousel({ title, products, sectionId }: ProductC
                   if (img) img.style.transform = 'scale(1)';
                 }}>
                   <div className="image-holder product-image-holder position-relative" style={{ height: '400px', overflow: 'hidden', background: '#f8f8f8' }}>
-                    <Link href="/sarees">
+                    <Link href={getCheckoutHref(product)}>
                       <Image
                         src={product.image}
                         alt={product.name}
@@ -137,48 +139,9 @@ export default function ProductCarousel({ title, products, sectionId }: ProductC
                         NEW
                       </span>
                     )}
-                    
-                    {/* Wishlist Button */}
-                    <button className="btn btn-icon position-absolute" style={{
-                      top: '15px',
-                      right: '15px',
-                      width: '40px',
-                      height: '40px',
-                      background: 'white',
-                      border: 'none',
-                      borderRadius: '50%',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      boxShadow: '0 2px 10px rgba(0,0,0,0.1)',
-                      transition: 'all 0.3s',
-                      cursor: 'pointer'
-                    }}
-                    onMouseEnter={(e) => {
-                      e.currentTarget.style.background = '#ff4757';
-                      e.currentTarget.style.transform = 'scale(1.1)';
-                    }}
-                    onMouseLeave={(e) => {
-                      e.currentTarget.style.background = 'white';
-                      e.currentTarget.style.transform = 'scale(1)';
-                    }}
-                    onClick={(e) => {
-                      e.preventDefault();
-                      e.stopPropagation();
-                      addToWishlist({
-                        id: String(product.id),
-                        name: product.name,
-                        image: product.image,
-                        price: parsePrice(product.price),
-                      });
-                    }}>
-                      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                        <use xlinkHref="#heart"></use>
-                      </svg>
-                    </button>
-                    
+
                     {/* Quick View Button - Shows on hover */}
-                    <Link href="/sarees" className="btn btn-dark text-uppercase position-absolute w-100 quick-view-btn" style={{
+                    <Link href={getCheckoutHref(product)} className="btn btn-dark text-uppercase position-absolute w-100 quick-view-btn" style={{
                       bottom: '0',
                       left: '0',
                       padding: '12px',
@@ -203,7 +166,7 @@ export default function ProductCarousel({ title, products, sectionId }: ProductC
                       lineHeight: '1.4',
                       minHeight: '40px'
                     }}>
-                      <Link href="/sarees" className="text-decoration-none text-dark">
+                      <Link href={getCheckoutHref(product)} className="text-decoration-none text-dark">
                         {product.name}
                       </Link>
                     </h6>
@@ -215,7 +178,7 @@ export default function ProductCarousel({ title, products, sectionId }: ProductC
                       }}>
                         {product.price}
                       </span>
-                      <Link href="/sarees" className="text-decoration-none" style={{
+                      <Link href={getCheckoutHref(product)} className="text-decoration-none" style={{
                         fontSize: '12px',
                         color: '#666',
                         fontWeight: '600',

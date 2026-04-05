@@ -1,10 +1,7 @@
-import { NextResponse } from 'next/server';
+import { getAdminSession } from "./getAdminSession";
 
-export const dynamic = 'force-static';
+export const dynamic = "force-dynamic";
 
 export async function GET() {
-  return NextResponse.json(
-    { message: 'Admin API is disabled in static export mode.' },
-    { status: 503 }
-  );
+  return getAdminSession();
 }

@@ -10,7 +10,6 @@ export interface CartItem extends ProductSnapshot {
 }
 
 const CART_COOKIE = 'swatika_cart';
-const WISHLIST_COOKIE = 'swatika_wishlist';
 const COOKIE_DAYS = 30;
 const STORE_EVENT = 'swatika-commerce-updated';
 
@@ -56,19 +55,6 @@ export const getCart = (): CartItem[] => {
   );
 };
 
-export const getWishlist = (): ProductSnapshot[] => {
-  const data = parseCookie(WISHLIST_COOKIE);
-  if (!Array.isArray(data)) return [];
-  return data.filter(
-    (item) =>
-      item &&
-      typeof item.id === 'string' &&
-      typeof item.name === 'string' &&
-      typeof item.price === 'number' &&
-      typeof item.image === 'string'
-  );
-};
-
 export const addToCart = (product: ProductSnapshot) => {
   const cart = getCart();
   const existing = cart.find((item) => item.id === product.id);
@@ -97,20 +83,5 @@ export const removeFromCart = (id: string) => {
 
 export const clearCart = () => {
   writeCookie(CART_COOKIE, []);
-  emitUpdate();
-};
-
-export const addToWishlist = (product: ProductSnapshot) => {
-  const wishlist = getWishlist();
-  if (!wishlist.some((item) => item.id === product.id)) {
-    wishlist.push(product);
-    writeCookie(WISHLIST_COOKIE, wishlist);
-    emitUpdate();
-  }
-};
-
-export const removeFromWishlist = (id: string) => {
-  const wishlist = getWishlist().filter((item) => item.id !== id);
-  writeCookie(WISHLIST_COOKIE, wishlist);
   emitUpdate();
 };

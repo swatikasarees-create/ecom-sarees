@@ -44,7 +44,7 @@ export default function ShopByCategory() {
       id: 6,
       name: 'Suit',
       image: instaImg('49faf2cd234e3d788bf0f9d46ae15cdbb8f5773d30954f7f92265dc1c75372c8'),
-      link: '/sarees?type=suit'
+      link: '/suit'
     }
   ];
 

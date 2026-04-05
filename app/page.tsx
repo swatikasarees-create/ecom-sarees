@@ -62,6 +62,8 @@ export default function Home() {
       <ShopByCategory />
       <SectionSeparator />
       <HeroSection />
+      <SectionSeparator />
+      <Instagram />
       {/* <SectionSeparator /> */}
       {/* <Features /> */}
       {/* <SectionSeparator /> */}
@@ -79,7 +81,6 @@ export default function Home() {
       <SectionSeparator />
       {/* <LogoBar /> */}
       {/* <Newsletter /> */}
-      <Instagram />
       <Footer />
       <ScrollToTop />
     </>

@@ -43,8 +43,30 @@ export const verifyAdminToken = (token: string | undefined | null) => {
   }
 };
 
+const getCookieFromHeader = (cookieHeader: string | null, name: string): string | undefined => {
+  if (!cookieHeader) return undefined;
+  for (const segment of cookieHeader.split(';')) {
+    const idx = segment.indexOf('=');
+    if (idx === -1) continue;
+    const key = segment.slice(0, idx).trim();
+    if (key !== name) continue;
+    const val = segment.slice(idx + 1).trim();
+    try {
+      return decodeURIComponent(val);
+    } catch {
+      return val;
+    }
+  }
+  return undefined;
+};
+
+/** Session token from raw Cookie header (no Request / headers() needed on the caller). */
+export const getAdminSessionTokenFromCookieHeader = (cookieHeader: string | null) =>
+  getCookieFromHeader(cookieHeader, ADMIN_COOKIE);
+
+/** Uses Cookie header (not request.cookies) so routes stay compatible with static export prerender. */
 export const isAuthenticatedRequest = (request: NextRequest) =>
-  verifyAdminToken(request.cookies.get(ADMIN_COOKIE)?.value);
+  verifyAdminToken(getAdminSessionTokenFromCookieHeader(request.headers.get('cookie')));
 
 export const isAuthenticatedServer = async () => {
   const cookieStore = await cookies();

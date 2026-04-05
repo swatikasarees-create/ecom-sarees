@@ -44,26 +44,13 @@ const baseProducts: Product[] = [
     collection: 'Festive Collection',
     description: 'Fresh and refined, this mint kurta features understated embroidery and mirror-style accents around the neckline for a subtle glow. Paired with a soft, coordinated dupatta—a polished choice for day events and family celebrations.'
   },
-  {
-    id: '3',
-    name: 'Mint & Blush Kurta Set (Color Options) with Dupatta',
-    price: 3200,
-    originalPrice: 4800,
-    image: instaImg('b4cca86a4ab2a3f245718b45cc80f953c5f5b165c04735d66ed497463b25dd5f'),
-    category: 'Kurta Sets',
-    fabric: 'Embroidered Cotton',
-    color: 'Multi',
-    availability: 'in_stock',
-    collection: 'Festive Collection',
-    description: 'A timeless embroidered kurta set offered in two versatile shades—mint and blush. Detailed with classic motifs and a statement neckline, each set comes with a matching dupatta for a complete, ready-to-wear occasion look.'
-  },
   // ── Sarees ──────────────────────────────────────────────────────
   {
     id: '4',
     name: 'Ivory Shimmer Net Saree with Fringe Pallu',
     price: 5000,
     originalPrice: 8000,
-    image: instaImg('b4cca86a4ab2a3f245718b45cc80f953c5f5b165c04735d66ed497463b25dd5f'),
+    image: instaImg('58c261d7b5b2a35e2cee8bcbff1812eb996427bdf0d134218f9d0abae29ee3da'),
     category: 'Party Wear Sarees',
     fabric: 'Net',
     color: 'Ivory',
@@ -141,8 +128,8 @@ const baseProducts: Product[] = [
   {
     id: '10',
     name: 'Navy Blue Sequin Lace Saree - Party Edit (Cut Danna Work)',
-    price: 1200,
-    originalPrice: 2000,
+    price: 12000,
+    originalPrice: 20000,
     image: instaImg('f97c788c153fcb26647e7ed1f91a161928fe7fbe720e992853654db25d644425'),
     category: 'Party Wear Sarees',
     fabric: 'Net',
@@ -572,16 +559,15 @@ type ProductSheetOverride = {
 };
 
 const sheetOverrides: Record<string, ProductSheetOverride> = {
-  '1': { name: 'Blush Pink Mirror-Embellished Kurta Set with Dupatta Crape Material ', description: 'A graceful blush-pink kurta elevated with delicate buti motifs and shimmering embellishment along the neckline and panel detailing. The coordinated dupatta completes the look with an elegant border finish-perfect for festive mornings, intimate gatherings, and celebratory dinners.', category: 'Suit', subCategory: 'Suit', price: 3200, hash: '49faf2cd234e3d788bf0f9d46ae15cdbb8f5773d30954f7f92265dc1c75372c8' },
+  '1': { name: 'Blush Pink Mirror-Embellished Kurta Set with Dupatta Crape Material ', description: 'A graceful blush-pink kurta elevated with delicate buti motifs and shimmering embellishment along the neckline and panel detailing. The coordinated dupatta completes the look with an elegant border finish-perfect for festive mornings, intimate gatherings, and celebratory dinners.', category: 'Suit', subCategory: 'Suit', price: 2, hash: '49faf2cd234e3d788bf0f9d46ae15cdbb8f5773d30954f7f92265dc1c75372c8' },
   '2': { name: 'Mint Green Mirror & Thread Embroidered Kurta Set with Dupatta', description: 'Fresh and refined mint kurta featuring understated embroidery and mirror-style accents around the neckline paired with a coordinated dupatta.', category: 'Suit', subCategory: 'Suit', price: 3200, hash: 'f66f3bd1d626c270c668337ad7ee728a80a172fafc370d88ba318267627c4403' },
-  '3': { name: 'Mint & Blush Kurta Set (Color Options)', description: 'Timeless embroidered kurta set offered in mint and blush shades with matching dupatta.', category: 'Suit', subCategory: 'Suit', price: 3200, hash: 'b4cca86a4ab2a3f245718b45cc80f953c5f5b165c04735d66ed497463b25dd5f' },
   '4': { name: 'Ivory Shimmer Net Saree with Fringe Pallu', description: 'Ivory saree featuring all-over shimmer with dramatic net pallu and fringe finish.', category: 'Sarees', subCategory: 'Net Sarees', price: 5000, hash: 'b4cca86a4ab2a3f245718b45cc80f953c5f5b165c04735d66ed497463b25dd5f' },
   '5': { name: 'Net Embellished Saree with Intricate Border', description: 'Seafoam saree with embroidered border and sequin detailing.', category: 'Sarees', subCategory: 'Net Sarees', price: 8000, hash: '46a257b9b9f758da7849f836bf71346d414778c4382aac9c626a44c1c91301b9' },
   '6': { name: 'Rust Orange Crush Silk Saree with Metallic Pallu', description: 'Rust-orange saree featuring bandhani-inspired pattern and metallic pallu.', category: 'Sarees', subCategory: 'Silk Sarees', price: 4500, hash: 'b9606fa353f07c69822a7f45e9dff88435ded645dc85564219b7027cf3b5ac5f' },
   '7': { name: 'Ghat Cholla Saree with Vibrant Pink Border & Motifs', description: 'Cream saree with contrast pink border and ornate motif detailing.', category: 'Sarees', subCategory: 'Silk Sarees', price: 11000, hash: 'ba76809e38182a59fc059fd1b5ff8d54fbef1671671d7dc2d45e60da014280e0' },
   '8': { name: 'Mint Green Embroidered Kurta Set', description: 'Mint kurta with embellished neckline and coordinated dupatta.', category: 'Suit', subCategory: 'Suit', price: 3200, hash: '58c261d7b5b2a35e2cee8bcbff1812eb996427bdf0d134218f9d0abae29ee3da' },
   '9': { name: 'Ivory Floral Embroidered Kurta Set', description: 'Ivory kurta set with pastel floral embroidery and dupatta.', category: 'Suit', subCategory: 'Suit', price: 2200, hash: '7e2a731cd4511deb5570e146d79835cc01042aa7230f8e8383c43c6bae58a690' },
-  '10': { name: 'Navy Blue Net Saree with Crystal Lace & Cut Dana Work', description: 'Navy saree with dense sequin work and lace drape effect.', category: 'Sarees', subCategory: 'Net Sarees', price: 1200, hash: 'f97c788c153fcb26647e7ed1f91a161928fe7fbe720e992853654db25d644425' },
+  '10': { name: 'Navy Blue Net Saree with Crystal Lace & Cut Dana Work', description: 'Navy saree with dense sequin work and lace drape effect.', category: 'Sarees', subCategory: 'Net Sarees', price: 12000, hash: 'f97c788c153fcb26647e7ed1f91a161928fe7fbe720e992853654db25d644425' },
   '11': { name: 'Pistachio Green Saree with Gold Brocade Pallu and Gotta Pati Work', description: 'Pistachio saree with broad gold brocade-style pallu.', category: 'Sarees', subCategory: 'Cotton Sarees', price: 3000, hash: 'cde29bd485ed32919ab8dcad18d98b1e4bfef3c66784dea02b1101d78c37a3cc' },
   '12': { name: 'Yellow-Turquoise Ombre Embroidered Suit Set', description: 'Ombre embroidered suit set with decorated dupatta border.', category: 'Suit', subCategory: 'Suit', price: 4200, hash: 'ac3c658306090476652612f6355f19d23a23a920e525e21d7ebe708c2ae41a5a' },
   '13': { name: 'Pastel Rainbow Stripe Saree Chinese Silk with Cut Danna Work', description: 'Pastel multicolor stripe saree with soft border.', category: 'Sarees', subCategory: 'Silk Sarees', price: 3200, hash: '15ff321335eca96ad3ae10207dc3e64dc57578cc932fa81e1fe20de55de7de1d' },
