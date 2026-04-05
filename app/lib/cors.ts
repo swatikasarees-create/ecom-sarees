@@ -18,6 +18,7 @@ export function parseAllowedOrigins(): string[] {
     out.add(`https://${process.env.VERCEL_URL}`);
   }
 
+  
   const list = [...out];
   const expanded = new Set(list);
   for (const o of list) {
