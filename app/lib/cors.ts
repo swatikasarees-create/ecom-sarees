@@ -19,6 +19,7 @@ export function parseAllowedOrigins(): string[] {
   }
 
   
+
   const list = [...out];
   const expanded = new Set(list);
   for (const o of list) {
