@@ -1,5 +1,5 @@
 import { Suspense } from 'react';
-import SareesContent from './SareesContent';
+import SareesContentGate from './SareesContentGate';
 
 export default function SareesPage() {
   return (
@@ -13,7 +13,7 @@ export default function SareesPage() {
         </div>
       </div>
     }>
-      <SareesContent section="sarees" />
+      <SareesContentGate section="sarees" />
     </Suspense>
   );
 }

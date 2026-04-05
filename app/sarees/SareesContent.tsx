@@ -3,19 +3,31 @@
 import { useState, useEffect, useMemo, useRef } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
-import { useSearchParams } from 'next/navigation';
 import { products, Product } from '../lib/productData';
 import { addToCart } from '../lib/commerceStore';
 
 type CatalogSection = 'sarees' | 'suit';
 
+const CATEGORY_BY_QUERY: Record<string, string> = {
+  designer: 'Designer Sarees',
+  silk: 'Silk Sarees',
+  cotton: 'Cotton Sarees',
+  georgette: 'Georgette Sarees',
+  chiffon: 'Chiffon Sarees',
+  banarasi: 'Banarasi Sarees',
+  patola: 'Patola Sarees',
+  wedding: 'Wedding Sarees',
+  party: 'Party Wear Sarees',
+};
+
 interface SareesContentProps {
   section?: CatalogSection;
+  /** `?type=` from URL; parent remounts this component when it changes. */
+  typeQuery?: string | null;
 }
 
-export default function SareesContent({ section = 'sarees' }: SareesContentProps) {
-  const searchParams = useSearchParams();
-  const typeParam = searchParams.get('type');
+export default function SareesContent({ section = 'sarees', typeQuery }: SareesContentProps) {
+  const typeParam = typeQuery ?? null;
   const isSuitSection = section === 'suit';
 
   const sectionProducts = useMemo(
@@ -36,8 +48,13 @@ export default function SareesContent({ section = 'sarees' }: SareesContentProps
     [sectionProducts]
   );
 
-  const [filteredProducts, setFilteredProducts] = useState<Product[]>(sectionProducts);
-  const [selectedCategories, setSelectedCategories] = useState<string[]>(isSuitSection ? ['Suit'] : []);
+  const [selectedCategories, setSelectedCategories] = useState<string[]>(() => {
+    if (isSuitSection) return ['Suit'];
+    if (!typeParam) return [];
+    const category = CATEGORY_BY_QUERY[typeParam];
+    if (category && categoryOptions.includes(category)) return [category];
+    return [];
+  });
   const [selectedFabrics, setSelectedFabrics] = useState<string[]>([]);
   const [priceRange, setPriceRange] = useState<[number, number]>([0, 15000]);
   const [sortBy, setSortBy] = useState<string>('date-new');
@@ -56,38 +73,7 @@ export default function SareesContent({ section = 'sarees' }: SareesContentProps
     startPanY: number;
   } | null>(null);
 
-  useEffect(() => {
-    if (isSuitSection) {
-      setSelectedCategories(['Suit']);
-      return;
-    }
-
-    if (!typeParam) {
-      setSelectedCategories([]);
-      return;
-    }
-
-    const categoryMap: { [key: string]: string } = {
-      designer: 'Designer Sarees',
-      silk: 'Silk Sarees',
-      cotton: 'Cotton Sarees',
-      georgette: 'Georgette Sarees',
-      chiffon: 'Chiffon Sarees',
-      banarasi: 'Banarasi Sarees',
-      patola: 'Patola Sarees',
-      wedding: 'Wedding Sarees',
-      party: 'Party Wear Sarees',
-    };
-    const category = categoryMap[typeParam];
-    if (category && categoryOptions.includes(category)) {
-      setSelectedCategories([category]);
-      return;
-    }
-
-    setSelectedCategories([]);
-  }, [categoryOptions, isSuitSection, typeParam]);
-
-  useEffect(() => {
+  const filteredProducts = useMemo(() => {
     let filtered = [...sectionProducts];
 
     if (selectedCategories.length > 0) {
@@ -117,18 +103,26 @@ export default function SareesContent({ section = 'sarees' }: SareesContentProps
         break;
     }
 
-    setFilteredProducts(filtered);
+    return filtered;
   }, [priceRange, sectionProducts, selectedCategories, selectedFabrics, sortBy]);
 
-  useEffect(() => {
-    if (!selectedProduct) return;
+  const openProductModal = (product: Product) => {
     setZoomLevel(1);
     setPanPosition({ x: 0, y: 0 });
     setIsDraggingImage(false);
     dragStateRef.current = null;
+    setSelectedProduct(product);
+  };
+
+  const closeProductModal = () => {
+    setSelectedProduct(null);
+  };
+
+  useEffect(() => {
+    if (!selectedProduct) return;
     const onEscape = (event: KeyboardEvent) => {
       if (event.key === 'Escape') {
-        setSelectedProduct(null);
+        closeProductModal();
       }
     };
     window.addEventListener('keydown', onEscape);
@@ -349,9 +343,9 @@ export default function SareesContent({ section = 'sarees' }: SareesContentProps
                     className="text-decoration-none w-100 text-start"
                     role="button"
                     tabIndex={0}
-                    onClick={() => setSelectedProduct(product)}
+                    onClick={() => openProductModal(product)}
                     onKeyDown={(event) => {
-                      if (event.key === 'Enter' || event.key === ' ') setSelectedProduct(product);
+                      if (event.key === 'Enter' || event.key === ' ') openProductModal(product);
                     }}
                     style={{ cursor: 'pointer' }}
                   >
@@ -409,10 +403,10 @@ export default function SareesContent({ section = 'sarees' }: SareesContentProps
         <div
           role="button"
           tabIndex={0}
-          onClick={() => setSelectedProduct(null)}
+          onClick={closeProductModal}
           onKeyDown={(event) => {
             if (event.key === 'Enter' || event.key === ' ') {
-              setSelectedProduct(null);
+              closeProductModal();
             }
           }}
           style={{
@@ -525,7 +519,7 @@ export default function SareesContent({ section = 'sarees' }: SareesContentProps
                 <div className="p-3 p-md-4">
                   <div className="d-flex justify-content-between align-items-start gap-3">
                     <h4 className="mb-2">{selectedProduct.name}</h4>
-                    <button type="button" className="btn-close" onClick={() => setSelectedProduct(null)} aria-label="Close" />
+                    <button type="button" className="btn-close" onClick={closeProductModal} aria-label="Close" />
                   </div>
                   <p className="text-muted mb-2">
                     {selectedProduct.category} • {selectedProduct.fabric}

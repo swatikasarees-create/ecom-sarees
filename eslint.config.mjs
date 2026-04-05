@@ -12,6 +12,8 @@ const eslintConfig = defineConfig([
     "out/**",
     "build/**",
     "next-env.d.ts",
+    // Vendor / legacy scripts in public (minified jQuery, etc.) — not project source
+    "public/**",
   ]),
 ]);
 

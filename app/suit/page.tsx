@@ -1,5 +1,5 @@
 import { Suspense } from 'react';
-import SareesContent from '../sarees/SareesContent';
+import SareesContentGate from '../sarees/SareesContentGate';
 
 export default function SuitPage() {
   return (
@@ -15,7 +15,7 @@ export default function SuitPage() {
         </div>
       }
     >
-      <SareesContent section="suit" />
+      <SareesContentGate section="suit" />
     </Suspense>
   );
 }
