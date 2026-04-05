@@ -78,21 +78,25 @@ export const getAdminCredentials = () => ({
   password: required('ADMIN_PASSWORD'),
 });
 
+const crossOriginAdminCookie = () => process.env.ALLOW_CROSS_ORIGIN_ADMIN === 'true';
+
 export const setAdminAuthCookie = (response: NextResponse, token: string) => {
+  const cross = crossOriginAdminCookie();
   response.cookies.set(ADMIN_COOKIE, token, {
     httpOnly: true,
-    secure: process.env.NODE_ENV === 'production',
-    sameSite: 'lax',
+    secure: cross || process.env.NODE_ENV === 'production',
+    sameSite: cross ? 'none' : 'lax',
     path: '/',
     maxAge: 60 * 60 * 12,
   });
 };
 
 export const clearAdminAuthCookie = (response: NextResponse) => {
+  const cross = crossOriginAdminCookie();
   response.cookies.set(ADMIN_COOKIE, '', {
     httpOnly: true,
-    secure: process.env.NODE_ENV === 'production',
-    sameSite: 'lax',
+    secure: cross || process.env.NODE_ENV === 'production',
+    sameSite: cross ? 'none' : 'lax',
     path: '/',
     maxAge: 0,
   });

@@ -14,7 +14,8 @@ import {
   type CartItem,
   updateCartQty,
 } from '../lib/commerceStore';
-import { products } from '../lib/productData';
+import { apiFetchCredentials, apiUrl } from '../lib/apiBase';
+import { getCatalogProducts, TEST_CATALOG_PRODUCT_ID } from '../lib/productData';
 
 const RAZORPAY_SCRIPT_ID = 'razorpay-checkout-js';
 
@@ -68,6 +69,18 @@ function CartContent() {
   const [razorpaySuccess, setRazorpaySuccess] = useState('');
   const [paymentError, setPaymentError] = useState('');
   const [isProcessingPayment, setIsProcessingPayment] = useState(false);
+  const includeTestCatalog = useMemo(
+    () =>
+      searchParams.has('test') ||
+      items.some((item) => item.id === TEST_CATALOG_PRODUCT_ID) ||
+      productIdFromQuery?.trim() === TEST_CATALOG_PRODUCT_ID,
+    [searchParams, items, productIdFromQuery]
+  );
+  const catalogProducts = useMemo(
+    () => getCatalogProducts(includeTestCatalog),
+    [includeTestCatalog]
+  );
+
   const [orderVoucher, setOrderVoucher] = useState<{
     orderId: string;
     amount: number;
@@ -95,7 +108,7 @@ function CartContent() {
     const requestedProductId = productIdFromQuery.trim();
     if (!requestedProductId) return;
 
-    const matchedProduct = products.find((product) => product.id === requestedProductId);
+    const matchedProduct = catalogProducts.find((product) => product.id === requestedProductId);
     if (!matchedProduct) return;
 
     const cartItems = getCart();
@@ -108,7 +121,7 @@ function CartContent() {
       image: matchedProduct.image,
     });
     setItems(getCart());
-  }, [productIdFromQuery]);
+  }, [productIdFromQuery, catalogProducts]);
 
   const subtotal = useMemo(
     () => items.reduce((sum, item) => sum + item.price * item.qty, 0),
@@ -133,19 +146,16 @@ function CartContent() {
   }, [items.length, name, phone, addressLine1, city, stateName, pincode]);
 
   /**
-   * Intended Razorpay charge in INR from env. Default ₹1 for testing — Razorpay India requires
-   * at least ₹1 (100 paise) for UPI QR and most methods; lower amounts show a broken QR ("Refresh QR").
-   * Set NEXT_PUBLIC_RAZORPAY_CHARGE_INR=subtotal for full cart amount.
+   * Razorpay charge in INR. Defaults to cart subtotal. Set NEXT_PUBLIC_RAZORPAY_CHARGE_INR to a
+   * number only for test overrides. Amount is clamped to ≥ ₹1 (100 paise) for Indian UPI/QR minimum.
    */
   const razorpayChargeInr = useMemo(() => {
     const raw = process.env.NEXT_PUBLIC_RAZORPAY_CHARGE_INR;
-    if (raw === 'subtotal' || raw === 'full') return subtotal;
-    if (raw === undefined || raw === '') return 1;
+    if (raw === undefined || raw === '' || raw === 'subtotal' || raw === 'full') return subtotal;
     const n = Number(raw);
     return Number.isFinite(n) && n > 0 ? n : subtotal;
   }, [subtotal]);
 
-  /** Amount sent to Razorpay (always ≥ ₹1 / 100 paise — gateway minimum for QR/UPI). */
   const razorpayAmountPaise = useMemo(
     () => Math.max(100, Math.round(razorpayChargeInr * 100)),
     [razorpayChargeInr]
@@ -158,8 +168,9 @@ function CartContent() {
     status: 'PLACED' | 'PAID';
     paymentId?: string | null;
   }) => {
-    const response = await fetch('/api/orders', {
+    const response = await fetch(apiUrl('/api/orders'), {
       method: 'POST',
+      credentials: apiFetchCredentials(),
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         items: items.map((item) => ({
@@ -769,12 +780,12 @@ function CartContent() {
                   <small className="text-muted d-block mt-1">
                     {razorpayChargeInr < subtotal ? (
                       <>
-                        Test mode: gateway charges <strong>₹{razorpayBilledInr.toFixed(2)}</strong> (order total remains{' '}
-                        <strong>₹{subtotal.toLocaleString('en-IN')}</strong> in your confirmation). Set{' '}
-                        <code className="small">NEXT_PUBLIC_RAZORPAY_CHARGE_INR=subtotal</code> to charge the full amount.
+                        Test override: gateway charges <strong>₹{razorpayBilledInr.toFixed(2)}</strong> (cart total{' '}
+                        <strong>₹{subtotal.toLocaleString('en-IN')}</strong>). Remove{' '}
+                        <code className="small">NEXT_PUBLIC_RAZORPAY_CHARGE_INR</code> to charge the full cart.
                         {razorpayBilledInr > razorpayChargeInr && (
                           <span className="d-block mt-1">
-                            UPI QR needs at least ₹1 — your configured amount was raised to meet Razorpay&apos;s minimum.
+                            Amount raised to at least ₹1 for Razorpay&apos;s minimum.
                           </span>
                         )}
                       </>

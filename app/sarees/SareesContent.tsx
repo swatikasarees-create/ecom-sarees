@@ -3,7 +3,8 @@
 import { useState, useEffect, useMemo, useRef } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
-import { products, Product } from '../lib/productData';
+import { useSearchParams } from 'next/navigation';
+import { getCatalogProducts, Product } from '../lib/productData';
 import { addToCart } from '../lib/commerceStore';
 
 type CatalogSection = 'sarees' | 'suit';
@@ -27,16 +28,17 @@ interface SareesContentProps {
 }
 
 export default function SareesContent({ section = 'sarees', typeQuery }: SareesContentProps) {
+  const searchParams = useSearchParams();
+  const showTestCatalog = searchParams.has('test');
   const typeParam = typeQuery ?? null;
   const isSuitSection = section === 'suit';
 
-  const sectionProducts = useMemo(
-    () =>
-      isSuitSection
-        ? products.filter((product) => product.category === 'Suit')
-        : products.filter((product) => product.category !== 'Suit'),
-    [isSuitSection]
-  );
+  const sectionProducts = useMemo(() => {
+    const catalog = getCatalogProducts(showTestCatalog);
+    return isSuitSection
+      ? catalog.filter((product) => product.category === 'Suit')
+      : catalog.filter((product) => product.category !== 'Suit');
+  }, [isSuitSection, showTestCatalog]);
 
   const categoryOptions = useMemo(
     () => [...new Set(sectionProducts.map((product) => product.category))].sort(),

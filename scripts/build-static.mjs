@@ -1,7 +1,16 @@
 /**
+ * Produces the `out/` folder for Hostinger (static HTML). Run: npm run build:static
+ * Plain `npm run build` does NOT create `out/` — it uses `.next/` for Node/Vercel.
+ *
  * Hostinger-style static export cannot include dynamic route handlers (e.g. force-dynamic + headers()).
  * This script temporarily replaces admin GET routes with stubs, runs next build with STATIC_EXPORT=true,
  * then restores the real route files.
+ *
+ * Before building for Hostinger, set in .env.production:
+ * - NEXT_PUBLIC_API_BASE_URL=https://<your-vercel-app>.vercel.app  (API backend)
+ * - NEXT_PUBLIC_SITE_URL=https://www.yourdomain.com
+ * Upload the `out/` folder to Hostinger public_html. APIs must stay deployed on Vercel with matching
+ * ALLOWED_ORIGINS and server env (MYSQL_*, ADMIN_*, etc.).
  */
 import { execSync } from "node:child_process";
 import fs from "node:fs";

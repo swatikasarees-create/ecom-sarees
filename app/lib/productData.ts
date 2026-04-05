@@ -559,7 +559,7 @@ type ProductSheetOverride = {
 };
 
 const sheetOverrides: Record<string, ProductSheetOverride> = {
-  '1': { name: 'Blush Pink Mirror-Embellished Kurta Set with Dupatta Crape Material ', description: 'A graceful blush-pink kurta elevated with delicate buti motifs and shimmering embellishment along the neckline and panel detailing. The coordinated dupatta completes the look with an elegant border finish-perfect for festive mornings, intimate gatherings, and celebratory dinners.', category: 'Suit', subCategory: 'Suit', price: 2, hash: '49faf2cd234e3d788bf0f9d46ae15cdbb8f5773d30954f7f92265dc1c75372c8' },
+  '1': { name: 'Blush Pink Mirror-Embellished Kurta Set with Dupatta Crape Material ', description: 'A graceful blush-pink kurta elevated with delicate buti motifs and shimmering embellishment along the neckline and panel detailing. The coordinated dupatta completes the look with an elegant border finish-perfect for festive mornings, intimate gatherings, and celebratory dinners.', category: 'Suit', subCategory: 'Suit', price: 3200, hash: '49faf2cd234e3d788bf0f9d46ae15cdbb8f5773d30954f7f92265dc1c75372c8' },
   '2': { name: 'Mint Green Mirror & Thread Embroidered Kurta Set with Dupatta', description: 'Fresh and refined mint kurta featuring understated embroidery and mirror-style accents around the neckline paired with a coordinated dupatta.', category: 'Suit', subCategory: 'Suit', price: 3200, hash: 'f66f3bd1d626c270c668337ad7ee728a80a172fafc370d88ba318267627c4403' },
   '4': { name: 'Ivory Shimmer Net Saree with Fringe Pallu', description: 'Ivory saree featuring all-over shimmer with dramatic net pallu and fringe finish.', category: 'Sarees', subCategory: 'Net Sarees', price: 5000, hash: 'b4cca86a4ab2a3f245718b45cc80f953c5f5b165c04735d66ed497463b25dd5f' },
   '5': { name: 'Net Embellished Saree with Intricate Border', description: 'Seafoam saree with embroidered border and sequin detailing.', category: 'Sarees', subCategory: 'Net Sarees', price: 8000, hash: '46a257b9b9f758da7849f836bf71346d414778c4382aac9c626a44c1c91301b9' },
@@ -649,6 +649,30 @@ const appendedSheetProducts = Object.entries(sheetOverrides)
   .map(([id, item]) => buildProductFromSheet(id, item));
 
 export const products: Product[] = [...overriddenProducts, ...appendedSheetProducts];
+
+/** Stable id for the optional ₹1 test listing (see `?test` query). */
+export const TEST_CATALOG_PRODUCT_ID = '__test_1inr';
+
+export const testCatalogProduct: Product = {
+  id: TEST_CATALOG_PRODUCT_ID,
+  name: '₹1 Test Product (catalog)',
+  price: 1,
+  originalPrice: 999,
+  image: instaImg('3876d6356902934f89c32ff17a01069cbecd69a3f5ed463a3e3d2cf989ee847d'),
+  category: 'Designer Sarees',
+  fabric: 'Cotton',
+  color: 'Test',
+  availability: 'in_stock',
+  collection: 'Test',
+  description:
+    'Internal test listing at ₹1. Shown only when the site URL includes the query parameter `test` (e.g. `/?test` or `/sarees?test`).',
+};
+
+/** Full catalog including the ₹1 test product when `includeTest` is true (URL `?test`). */
+export function getCatalogProducts(includeTest: boolean): Product[] {
+  if (!includeTest) return products;
+  return [...products, testCatalogProduct];
+}
 
 // ── Filter Helpers ────────────────────────────────────────────────
 

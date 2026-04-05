@@ -9,7 +9,8 @@ type CatalogSection = 'sarees' | 'suit';
 export default function SareesContentGate({ section }: { section: CatalogSection }) {
   const searchParams = useSearchParams();
   const typeParam = searchParams.get('type');
-  const remountKey = section === 'suit' ? 'suit' : typeParam ?? '';
+  const testFlag = searchParams.has('test') ? 't' : '';
+  const remountKey = section === 'suit' ? `suit-${testFlag}` : `${typeParam ?? ''}-${testFlag}`;
 
   return <SareesContent key={remountKey} section={section} typeQuery={typeParam} />;
 }

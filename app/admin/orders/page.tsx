@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
+import { apiFetchCredentials, apiUrl } from '../../lib/apiBase';
 
 type OrderStatus =
   | 'PLACED'
@@ -62,14 +63,20 @@ export default function AdminOrdersPage() {
     setLoading(true);
     setError('');
     try {
-      const sessionRes = await fetch('/api/admin/session', { cache: 'no-store' });
+      const sessionRes = await fetch(apiUrl('/api/admin/session'), {
+        cache: 'no-store',
+        credentials: apiFetchCredentials(),
+      });
       const sessionData = await sessionRes.json();
       if (!sessionData?.authenticated) {
         window.location.href = '/admin/login';
         return;
       }
 
-      const ordersRes = await fetch('/api/admin/orders', { cache: 'no-store' });
+      const ordersRes = await fetch(apiUrl('/api/admin/orders'), {
+        cache: 'no-store',
+        credentials: apiFetchCredentials(),
+      });
       if (ordersRes.status === 401) {
         window.location.href = '/admin/login';
         return;
@@ -105,8 +112,9 @@ export default function AdminOrdersPage() {
     setSavingId(order.id);
     setError('');
     try {
-      const response = await fetch(`/api/admin/orders/${order.id}`, {
+      const response = await fetch(apiUrl(`/api/admin/orders/${order.id}`), {
         method: 'PATCH',
+        credentials: apiFetchCredentials(),
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ status: nextStatus }),
       });
@@ -124,7 +132,7 @@ export default function AdminOrdersPage() {
   };
 
   const onLogout = async () => {
-    await fetch('/api/admin/logout', { method: 'POST' });
+    await fetch(apiUrl('/api/admin/logout'), { method: 'POST', credentials: apiFetchCredentials() });
     window.location.href = '/admin/login';
   };
 

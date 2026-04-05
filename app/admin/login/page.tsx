@@ -3,6 +3,7 @@
 import { FormEvent, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
+import { apiFetchCredentials, apiUrl } from '../../lib/apiBase';
 
 export default function AdminLoginPage() {
   const router = useRouter();
@@ -16,8 +17,9 @@ export default function AdminLoginPage() {
     setLoading(true);
     setError('');
     try {
-      const response = await fetch('/api/admin/login', {
+      const response = await fetch(apiUrl('/api/admin/login'), {
         method: 'POST',
+        credentials: apiFetchCredentials(),
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ username: username.trim(), password }),
       });

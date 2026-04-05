@@ -2,6 +2,7 @@
 
 import { FormEvent, useEffect, useMemo, useState } from 'react';
 import Image from 'next/image';
+import { apiFetchCredentials, apiUrl } from '../../lib/apiBase';
 
 interface AdminProduct {
   id: number;
@@ -36,7 +37,10 @@ export default function ProductsAdminClient() {
     setLoading(true);
     setError('');
     try {
-      const res = await fetch('/api/admin/products', { cache: 'no-store' });
+      const res = await fetch(apiUrl('/api/admin/products'), {
+        cache: 'no-store',
+        credentials: apiFetchCredentials(),
+      });
       if (res.status === 401) {
         window.location.href = '/admin/login';
         return;
@@ -82,10 +86,11 @@ export default function ProductsAdminClient() {
       };
 
       const isEdit = form.id !== null;
-      const url = isEdit ? `/api/admin/products/${form.id}` : '/api/admin/products';
+      const path = isEdit ? `/api/admin/products/${form.id}` : '/api/admin/products';
       const method = isEdit ? 'PUT' : 'POST';
-      const res = await fetch(url, {
+      const res = await fetch(apiUrl(path), {
         method,
+        credentials: apiFetchCredentials(),
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload),
       });
@@ -117,7 +122,10 @@ export default function ProductsAdminClient() {
   const onDelete = async (id: number) => {
     const confirmed = window.confirm('Delete this product?');
     if (!confirmed) return;
-    const res = await fetch(`/api/admin/products/${id}`, { method: 'DELETE' });
+    const res = await fetch(apiUrl(`/api/admin/products/${id}`), {
+      method: 'DELETE',
+      credentials: apiFetchCredentials(),
+    });
     if (res.ok) {
       await loadProducts();
     }
@@ -128,7 +136,11 @@ export default function ProductsAdminClient() {
     try {
       const fd = new FormData();
       fd.append('file', file);
-      const res = await fetch('/api/admin/upload', { method: 'POST', body: fd });
+      const res = await fetch(apiUrl('/api/admin/upload'), {
+        method: 'POST',
+        credentials: apiFetchCredentials(),
+        body: fd,
+      });
       const data = await res.json();
       if (!res.ok) {
         setError(data?.message ?? 'Image upload failed.');
@@ -141,7 +153,7 @@ export default function ProductsAdminClient() {
   };
 
   const onLogout = async () => {
-    await fetch('/api/admin/logout', { method: 'POST' });
+    await fetch(apiUrl('/api/admin/logout'), { method: 'POST', credentials: apiFetchCredentials() });
     window.location.href = '/admin/login';
   };
 

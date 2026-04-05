@@ -1,5 +1,10 @@
 RewriteEngine On
 
+# API routes are hosted on Vercel (see NEXT_PUBLIC_API_BASE_URL). If the browser still
+# requests /api/* on this host, do not chain HTML rewrites — return 404.
+RewriteCond %{REQUEST_URI} ^/api/ [NC]
+RewriteRule ^ - [R=404,L]
+
 # 1) Force HTTPS
 RewriteCond %{HTTPS} !=on
 RewriteRule ^ https://%{HTTP_HOST}%{REQUEST_URI} [R=301,L]

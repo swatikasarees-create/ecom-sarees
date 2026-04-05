@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import { FormEvent, Suspense, useEffect, useState } from 'react';
+import { apiFetchCredentials, apiUrl } from '../lib/apiBase';
 
 type TrackItem = {
   productId: string;
@@ -95,7 +96,10 @@ function TrackOrderInner() {
       if (oid) params.set('orderId', oid);
       if (em) params.set('email', em);
 
-      const res = await fetch(`/api/orders/track?${params.toString()}`, { cache: 'no-store' });
+      const res = await fetch(apiUrl(`/api/orders/track?${params.toString()}`), {
+        cache: 'no-store',
+        credentials: apiFetchCredentials(),
+      });
       const data = await res.json();
 
       if (!res.ok) {

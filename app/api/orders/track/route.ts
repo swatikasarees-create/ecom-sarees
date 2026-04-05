@@ -1,7 +1,26 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { corsAllowOrigin, jsonWithCors } from '../../../lib/cors';
 import { ensureOrdersTables, getDbPool } from '../../../lib/db';
 
 export const dynamic = 'force-dynamic';
+
+export async function OPTIONS(request: NextRequest) {
+  const allow = corsAllowOrigin(request);
+  if (!allow) {
+    return new NextResponse(null, { status: 204 });
+  }
+  return new NextResponse(null, {
+    status: 204,
+    headers: {
+      'Access-Control-Allow-Origin': allow,
+      'Access-Control-Allow-Methods': 'GET, OPTIONS',
+      'Access-Control-Allow-Headers': 'Content-Type',
+      'Access-Control-Allow-Credentials': 'true',
+      'Access-Control-Max-Age': '86400',
+      'Vary': 'Origin',
+    },
+  });
+}
 
 type DbOrder = {
   id: number;
@@ -65,7 +84,8 @@ function mapOrder(order: DbOrder, items: DbOrderItem[]) {
 
 export async function GET(request: NextRequest) {
   if (process.env.STATIC_EXPORT === 'true') {
-    return NextResponse.json(
+    return jsonWithCors(
+      request,
       { message: 'Order tracking is disabled in static export mode.' },
       { status: 503 }
     );
@@ -75,7 +95,8 @@ export async function GET(request: NextRequest) {
   const emailParam = request.nextUrl.searchParams.get('email')?.trim().toLowerCase() ?? '';
 
   if (!orderIdParam && !emailParam) {
-    return NextResponse.json(
+    return jsonWithCors(
+      request,
       { message: 'Enter your order ID or the email used at checkout.' },
       { status: 400 }
     );
@@ -92,7 +113,8 @@ export async function GET(request: NextRequest) {
       );
       const order = (rows as DbOrder[])[0];
       if (!order) {
-        return NextResponse.json(
+        return jsonWithCors(
+          request,
           { message: 'No order matches this order ID and email. Check the details and try again.' },
           { status: 404 }
         );
@@ -101,20 +123,20 @@ export async function GET(request: NextRequest) {
         `SELECT * FROM order_items WHERE order_id = ? ORDER BY id ASC`,
         [order.id]
       );
-      return NextResponse.json({ kind: 'single', order: mapOrder(order, itemRows as DbOrderItem[]) });
+      return jsonWithCors(request, { kind: 'single', order: mapOrder(order, itemRows as DbOrderItem[]) });
     }
 
     if (orderIdParam) {
       const [rows] = await db.query(`SELECT * FROM orders WHERE order_id = ? LIMIT 1`, [orderIdParam]);
       const order = (rows as DbOrder[])[0];
       if (!order) {
-        return NextResponse.json({ message: 'We could not find an order with that ID.' }, { status: 404 });
+        return jsonWithCors(request, { message: 'We could not find an order with that ID.' }, { status: 404 });
       }
       const [itemRows] = await db.query(
         `SELECT * FROM order_items WHERE order_id = ? ORDER BY id ASC`,
         [order.id]
       );
-      return NextResponse.json({ kind: 'single', order: mapOrder(order, itemRows as DbOrderItem[]) });
+      return jsonWithCors(request, { kind: 'single', order: mapOrder(order, itemRows as DbOrderItem[]) });
     }
 
     const [listRows] = await db.query(
@@ -138,13 +160,13 @@ export async function GET(request: NextRequest) {
       item_count: number;
     }[];
     if (list.length === 0) {
-      return NextResponse.json({
+      return jsonWithCors(request, {
         kind: 'list',
         orders: [],
         message: 'No orders found for this email.',
       });
     }
-    return NextResponse.json({
+    return jsonWithCors(request, {
       kind: 'list',
       orders: list.map((row) => ({
         orderId: row.order_id,
@@ -157,6 +179,6 @@ export async function GET(request: NextRequest) {
     });
   } catch (error) {
     const message = error instanceof Error ? error.message : 'Unable to look up order.';
-    return NextResponse.json({ message }, { status: 500 });
+    return jsonWithCors(request, { message }, { status: 500 });
   }
 }

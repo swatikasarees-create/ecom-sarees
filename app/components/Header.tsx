@@ -2,14 +2,16 @@
 
 import Link from 'next/link';
 import Image from 'next/image';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import type { CSSProperties } from 'react';
 import { FormEvent, useEffect, useMemo, useState } from 'react';
 import { getCart, getStoreEventName, removeFromCart, type CartItem } from '../lib/commerceStore';
-import { products } from '../lib/productData';
+import { getCatalogProducts } from '../lib/productData';
 
 export default function Header() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const showTestCatalog = searchParams.has('test');
   const [isOffcanvasOpen, setIsOffcanvasOpen] = useState(false);
   const [isCartOpen, setIsCartOpen] = useState(false);
   const [isSearchOpen, setIsSearchOpen] = useState(false);
@@ -47,10 +49,10 @@ export default function Header() {
   const searchMatches = useMemo(() => {
     const query = searchTerm.trim().toLowerCase();
     if (!query) return [];
-    return products
+    return getCatalogProducts(showTestCatalog)
       .filter((product) => product.name.toLowerCase().includes(query))
       .slice(0, 8);
-  }, [searchTerm]);
+  }, [searchTerm, showTestCatalog]);
 
   const toCheckoutHref = (productId: string, productName: string) =>
     `/checkout?productId=${productId}&product=${encodeURIComponent(productName)}`;

@@ -1,12 +1,13 @@
 import type { Metadata } from 'next';
 import TopHeader from './components/TopHeader';
-import Header from './components/Header';
+import HeaderShell from './components/HeaderShell';
 import BannerCarousel from './components/BannerCarousel';
 import PromoMarquee from './components/PromoMarquee';
 import ShopByCategory from './components/ShopByCategory';
 import HeroSection from './components/HeroSection';
 import Features from './components/Features';
 import Categories from './components/Categories';
+import HomeNewArrivalsCarousel from './components/HomeNewArrivalsCarousel';
 import ProductCarousel from './components/ProductCarousel';
 import Collection from './components/Collection';
 import Testimonials from './components/Testimonials';
@@ -27,36 +28,34 @@ export const metadata: Metadata = {
 };
 
 // Convert products to carousel format
-const formatProductsForCarousel = (prods: typeof products) => 
-  prods.map(p => ({
+const formatProductsForCarousel = (prods: typeof products) =>
+  prods.map((p) => ({
     id: p.id,
     name: p.name,
     price: `₹${p.price.toLocaleString('en-IN')}`,
-    image: p.image
+    image: p.image,
   }));
 
-// New Arrivals: Latest products (tissue silk, designer sarees, suit sets)
-const newArrivals = formatProductsForCarousel(
-  products.filter(p => ['18', '36', '37', '38', '39', '40', '41'].includes(p.id))
-);
-
-// Best Sellers: Highest value products (sarees with premium prices)
-const bestSellers = formatProductsForCarousel(
-  products.filter(p => ['7', '5', '31', '35', '6', '40'].includes(p.id))
-);
-
-// Trending: Party wear and festive sarees
-const trendingProducts = formatProductsForCarousel(
-  products.filter(p => p.collection === 'Party Wear' || p.collection === 'Festive Collection').slice(0, 6)
-);
-
 export default function Home() {
+  const newArrivalIds = ['18', '36', '37', '38', '39', '40', '41'];
+  const newArrivalBaseProducts = products.filter((p) => newArrivalIds.includes(p.id));
+
+  const bestSellers = formatProductsForCarousel(
+    products.filter((p) => ['7', '5', '31', '35', '6', '40'].includes(p.id))
+  );
+
+  const trendingProducts = formatProductsForCarousel(
+    products
+      .filter((p) => p.collection === 'Party Wear' || p.collection === 'Festive Collection')
+      .slice(0, 6)
+  );
+
   return (
     <>
       <AOSInit />
       <SvgIcons />
       <TopHeader />
-      <Header />
+      <HeaderShell />
       <BannerCarousel />
       <PromoMarquee />
       <ShopByCategory />
@@ -69,7 +68,7 @@ export default function Home() {
       {/* <SectionSeparator /> */}
       <Categories />
       <SectionSeparator />
-      <ProductCarousel title="Our New Arrivals" products={newArrivals} sectionId="new-arrival" />
+      <HomeNewArrivalsCarousel baseProducts={newArrivalBaseProducts} />
       {/* <SectionSeparator />
       <Collection />
       <SectionSeparator /> */}
@@ -86,3 +85,4 @@ export default function Home() {
     </>
   );
 }
+

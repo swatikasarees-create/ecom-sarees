@@ -1,6 +1,6 @@
 import type { Metadata } from 'next';
 import TopHeader from '../components/TopHeader';
-import Header from '../components/Header';
+import HeaderShell from '../components/HeaderShell';
 import Footer from '../components/Footer';
 import SvgIcons from '../components/SvgIcons';
 
@@ -23,7 +23,7 @@ export default function CheckoutLayout({
     <>
       <SvgIcons />
       <TopHeader />
-      <Header />
+      <HeaderShell />
       {children}
       <Footer />
     </>

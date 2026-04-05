@@ -1,6 +1,6 @@
 import type { Metadata } from 'next';
 import Footer from '../components/Footer';
-import Header from '../components/Header';
+import HeaderShell from '../components/HeaderShell';
 import SvgIcons from '../components/SvgIcons';
 import TopHeader from '../components/TopHeader';
 
@@ -23,7 +23,7 @@ export default function CartLayout({
     <>
       <SvgIcons />
       <TopHeader />
-      <Header />
+      <HeaderShell />
       {children}
       <Footer />
     </>
