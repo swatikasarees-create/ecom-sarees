@@ -3,7 +3,7 @@
 import { FormEvent, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { apiFetchCredentials, apiUrl } from '../../lib/apiBase';
+import { apiFetchCredentials, apiUrl, setStoredAdminToken } from '../../lib/apiBase';
 
 export default function AdminLoginPage() {
   const router = useRouter();
@@ -27,6 +27,9 @@ export default function AdminLoginPage() {
       if (!response.ok) {
         setError(data?.message ?? 'Login failed.');
         return;
+      }
+      if (data?.token) {
+        setStoredAdminToken(data.token);
       }
       router.push('/admin/orders');
       router.refresh();

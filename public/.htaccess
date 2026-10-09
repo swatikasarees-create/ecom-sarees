@@ -17,6 +17,12 @@ RewriteRule ^ https://www.swatikasarees.com%{REQUEST_URI} [R=301,L]
 RewriteCond %{THE_REQUEST} \s/+(.*/)?index\.html[\s?] [NC]
 RewriteRule ^(.*/)?index\.html$ /$1 [R=301,L]
 
+# 3b) Admin portal direct rewrites (supports /admin, /admin/, /admin/login, etc.)
+RewriteRule ^admin/?$ admin.html [L]
+RewriteRule ^admin/login/?$ admin/login.html [L]
+RewriteRule ^admin/products/?$ admin/products.html [L]
+RewriteRule ^admin/orders/?$ admin/orders.html [L]
+
 # 4) Convert pseudo-route directories (/suit/) to route files (/suit)
 RewriteCond %{REQUEST_FILENAME} -d
 RewriteCond %{REQUEST_FILENAME}index.html !-f

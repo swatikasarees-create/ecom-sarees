@@ -2,7 +2,7 @@
 
 import { FormEvent, useEffect, useMemo, useState } from 'react';
 import Image from 'next/image';
-import { apiFetchCredentials, apiUrl } from '../../lib/apiBase';
+import { adminAuthHeaders, apiFetchCredentials, apiUrl, clearStoredAdminToken } from '../../lib/apiBase';
 
 interface AdminProduct {
   id: number;
@@ -40,6 +40,7 @@ export default function ProductsAdminClient() {
       const res = await fetch(apiUrl('/api/admin/products'), {
         cache: 'no-store',
         credentials: apiFetchCredentials(),
+        headers: adminAuthHeaders(),
       });
       if (res.status === 401) {
         window.location.href = '/admin/login';
@@ -91,7 +92,7 @@ export default function ProductsAdminClient() {
       const res = await fetch(apiUrl(path), {
         method,
         credentials: apiFetchCredentials(),
-        headers: { 'Content-Type': 'application/json' },
+        headers: adminAuthHeaders({ 'Content-Type': 'application/json' }),
         body: JSON.stringify(payload),
       });
       const data = await res.json();
@@ -125,6 +126,7 @@ export default function ProductsAdminClient() {
     const res = await fetch(apiUrl(`/api/admin/products/${id}`), {
       method: 'DELETE',
       credentials: apiFetchCredentials(),
+      headers: adminAuthHeaders(),
     });
     if (res.ok) {
       await loadProducts();
@@ -139,6 +141,7 @@ export default function ProductsAdminClient() {
       const signRes = await fetch(apiUrl('/api/admin/upload'), {
         method: 'POST',
         credentials: apiFetchCredentials(),
+        headers: adminAuthHeaders(),
       });
       const signData = await signRes.json();
       if (!signRes.ok) {
@@ -173,7 +176,12 @@ export default function ProductsAdminClient() {
   };
 
   const onLogout = async () => {
-    await fetch(apiUrl('/api/admin/logout'), { method: 'POST', credentials: apiFetchCredentials() });
+    clearStoredAdminToken();
+    await fetch(apiUrl('/api/admin/logout'), {
+      method: 'POST',
+      credentials: apiFetchCredentials(),
+      headers: adminAuthHeaders(),
+    });
     window.location.href = '/admin/login';
   };
 

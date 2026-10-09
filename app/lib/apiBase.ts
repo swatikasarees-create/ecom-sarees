@@ -34,3 +34,32 @@ export function apiUrl(path: string): string {
 export function apiFetchCredentials(): RequestCredentials {
   return getApiBaseUrl() ? 'include' : 'same-origin';
 }
+
+const ADMIN_TOKEN_KEY = 'swatika_admin_token';
+
+export function getStoredAdminToken(): string | null {
+  if (typeof window === 'undefined') return null;
+  return localStorage.getItem(ADMIN_TOKEN_KEY);
+}
+
+export function setStoredAdminToken(token: string): void {
+  if (typeof window !== 'undefined') {
+    localStorage.setItem(ADMIN_TOKEN_KEY, token);
+  }
+}
+
+export function clearStoredAdminToken(): void {
+  if (typeof window !== 'undefined') {
+    localStorage.removeItem(ADMIN_TOKEN_KEY);
+  }
+}
+
+/** Injects Bearer token into headers if available for seamless cross-origin admin API requests. */
+export function adminAuthHeaders(extraHeaders?: Record<string, string>): HeadersInit {
+  const headers: Record<string, string> = { ...(extraHeaders ?? {}) };
+  const token = getStoredAdminToken();
+  if (token) {
+    headers['Authorization'] = `Bearer ${token}`;
+  }
+  return headers;
+}

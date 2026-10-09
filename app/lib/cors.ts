@@ -18,6 +18,12 @@ export function parseAllowedOrigins(): string[] {
     out.add(`https://${process.env.VERCEL_URL}`);
   }
 
+  // Ensure primary custom domains and local dev are always permitted
+  out.add('https://swatikasarees.com');
+  out.add('https://www.swatikasarees.com');
+  out.add('http://localhost:3000');
+  out.add('http://127.0.0.1:3000');
+
   
 
   const list = [...out];

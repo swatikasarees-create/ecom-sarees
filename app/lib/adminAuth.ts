@@ -64,9 +64,17 @@ const getCookieFromHeader = (cookieHeader: string | null, name: string): string 
 export const getAdminSessionTokenFromCookieHeader = (cookieHeader: string | null) =>
   getCookieFromHeader(cookieHeader, ADMIN_COOKIE);
 
-/** Uses Cookie header (not request.cookies) so routes stay compatible with static export prerender. */
+export const getAdminTokenFromRequest = (request: NextRequest): string | undefined => {
+  const authHeader = request.headers.get('authorization')?.trim();
+  if (authHeader && authHeader.toLowerCase().startsWith('bearer ')) {
+    return authHeader.slice(7).trim();
+  }
+  return getAdminSessionTokenFromCookieHeader(request.headers.get('cookie'));
+};
+
+/** Checks both Authorization: Bearer <token> and Cookie headers for maximum cross-origin compatibility. */
 export const isAuthenticatedRequest = (request: NextRequest) =>
-  verifyAdminToken(getAdminSessionTokenFromCookieHeader(request.headers.get('cookie')));
+  verifyAdminToken(getAdminTokenFromRequest(request));
 
 export const isAuthenticatedServer = async () => {
   const cookieStore = await cookies();
@@ -78,25 +86,23 @@ export const getAdminCredentials = () => ({
   password: required('ADMIN_PASSWORD'),
 });
 
-const crossOriginAdminCookie = () => process.env.ALLOW_CROSS_ORIGIN_ADMIN === 'true';
+const isProd = () => process.env.NODE_ENV === 'production';
 
 export const setAdminAuthCookie = (response: NextResponse, token: string) => {
-  const cross = crossOriginAdminCookie();
   response.cookies.set(ADMIN_COOKIE, token, {
     httpOnly: true,
-    secure: cross || process.env.NODE_ENV === 'production',
-    sameSite: cross ? 'none' : 'lax',
+    secure: isProd(),
+    sameSite: isProd() ? 'none' : 'lax',
     path: '/',
     maxAge: 60 * 60 * 12,
   });
 };
 
 export const clearAdminAuthCookie = (response: NextResponse) => {
-  const cross = crossOriginAdminCookie();
   response.cookies.set(ADMIN_COOKIE, '', {
     httpOnly: true,
-    secure: cross || process.env.NODE_ENV === 'production',
-    sameSite: cross ? 'none' : 'lax',
+    secure: isProd(),
+    sameSite: isProd() ? 'none' : 'lax',
     path: '/',
     maxAge: 0,
   });

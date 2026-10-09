@@ -71,6 +71,30 @@ try {
     cwd: root,
     env: { ...process.env, STATIC_EXPORT: "true" },
   });
+
+  // Ensure directory index.html files exist for Apache compatibility
+  const copies = [
+    { src: 'out/admin.html', dest: 'out/admin/index.html' },
+    { src: 'out/admin/login.html', dest: 'out/admin/login/index.html' },
+    { src: 'out/admin/products.html', dest: 'out/admin/products/index.html' },
+    { src: 'out/admin/orders.html', dest: 'out/admin/orders/index.html' },
+  ];
+
+  for (const c of copies) {
+    const srcPath = path.join(root, c.src);
+    const destPath = path.join(root, c.dest);
+    if (fs.existsSync(srcPath)) {
+      fs.mkdirSync(path.dirname(destPath), { recursive: true });
+      fs.copyFileSync(srcPath, destPath);
+    }
+  }
+
+  // Ensure .htaccess is in out
+  const htaccessSrc = path.join(root, 'public/.htaccess');
+  const htaccessDest = path.join(root, 'out/.htaccess');
+  if (fs.existsSync(htaccessSrc)) {
+    fs.copyFileSync(htaccessSrc, htaccessDest);
+  }
 } finally {
   for (const rel of ROUTES) {
     fs.writeFileSync(path.join(root, rel), backups.get(rel), "utf8");
