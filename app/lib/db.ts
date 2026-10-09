@@ -109,6 +109,17 @@ export const ensureOrdersTables = async () => {
             ON DELETE CASCADE
         )
       `);
+
+      // Ensure any legacy table columns match backend expectations
+      try {
+        await db.query(`ALTER TABLE orders ADD COLUMN state_name VARCHAR(120) NULL AFTER city`);
+      } catch {}
+      try {
+        await db.query(`ALTER TABLE orders ADD COLUMN amount DECIMAL(10,2) NULL AFTER payment_id`);
+      } catch {}
+      try {
+        await db.query(`ALTER TABLE order_items ADD COLUMN quantity INT NOT NULL DEFAULT 1 AFTER unit_price`);
+      } catch {}
     })();
   }
   await ordersTableReadyPromise;
