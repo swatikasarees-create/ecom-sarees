@@ -130,12 +130,14 @@ export default function BannerCarousel() {
     return () => window.removeEventListener(eventName, syncWishlist);
   }, []);
 
-  const isOutOfStock = (productId: string) => {
+  const isOutOfStock = (productId: string, name?: string) => {
     const stock = stockMap[productId];
     if (stock) {
       return stock.inventory <= 0 || stock.availability === 'out_of_stock';
     }
-    const cat = allProducts.find((p) => String(p.id) === productId);
+    const cat =
+      allProducts.find((p) => String(p.id) === String(productId)) ||
+      (name ? allProducts.find((p) => p.name.trim().toLowerCase() === name.trim().toLowerCase() || p.name.toLowerCase().includes(name.toLowerCase())) : null);
     if (cat) {
       return cat.availability === 'out_of_stock' || (cat.inventory !== undefined && cat.inventory <= 0);
     }
@@ -143,9 +145,12 @@ export default function BannerCarousel() {
   };
 
   const openProductModal = (banner: BannerItem) => {
-    const full = allProducts.find((p) => String(p.id) === banner.productId);
+    const full =
+      allProducts.find((p) => String(p.id) === String(banner.productId)) ||
+      allProducts.find((p) => p.name.trim().toLowerCase() === banner.name.trim().toLowerCase()) ||
+      allProducts.find((p) => p.name.toLowerCase().includes(banner.name.toLowerCase()));
     if (full) {
-      const stock = stockMap[banner.productId];
+      const stock = stockMap[String(full.id)];
       const inv = stock ? stock.inventory : full.inventory;
       const avail = stock ? stock.availability : full.availability;
       setSelectedProduct({

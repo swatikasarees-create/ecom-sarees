@@ -68,7 +68,9 @@ export default function Categories() {
     if (stock) {
       return stock.inventory <= 0 || stock.availability === 'out_of_stock';
     }
-    const cat = allProducts.find((p) => String(p.id) === String(product.id));
+    const cat =
+      allProducts.find((p) => String(p.id) === String(product.id)) ||
+      allProducts.find((p) => p.name.trim().toLowerCase() === product.name.trim().toLowerCase());
     if (cat) {
       return cat.availability === 'out_of_stock' || (cat.inventory !== undefined && cat.inventory <= 0);
     }
@@ -76,9 +78,12 @@ export default function Categories() {
   };
 
   const openProductModal = (product: Product) => {
-    const full = allProducts.find((p) => String(p.id) === String(product.id));
+    const full =
+      allProducts.find((p) => String(p.id) === String(product.id)) ||
+      allProducts.find((p) => p.name.trim().toLowerCase() === product.name.trim().toLowerCase()) ||
+      allProducts.find((p) => p.name.toLowerCase().includes(product.name.toLowerCase()));
     if (full) {
-      const stock = stockMap[String(product.id)];
+      const stock = stockMap[String(full.id)];
       const inv = stock ? stock.inventory : full.inventory;
       const avail = stock ? stock.availability : full.availability;
       setSelectedProduct({
@@ -103,8 +108,13 @@ export default function Categories() {
     }
   };
 
-  const getCheckoutHref = (product: Product) =>
-    `/checkout?productId=${product.id}&product=${encodeURIComponent(product.name)}`;
+  const getCheckoutHref = (product: Product) => {
+    const full =
+      allProducts.find((p) => String(p.id) === String(product.id)) ||
+      allProducts.find((p) => p.name.trim().toLowerCase() === product.name.trim().toLowerCase());
+    const targetId = full ? full.id : product.id;
+    return `/checkout?productId=${targetId}&product=${encodeURIComponent(product.name)}`;
+  };
 
   const bestSellers: Product[] = [
     {

@@ -42,22 +42,33 @@ export async function POST(request: NextRequest) {
 
     // Check existing products in DB
     const [existingRows] = await db.query<RowDataPacket[]>(
-      `SELECT name FROM products`
+      `SELECT id, name FROM products`
     );
-    const existingNames = new Set(existingRows.map((r) => r.name.toLowerCase().trim()));
+    const existingIds = new Set(existingRows.map((r) => String(r.id)));
 
     let seededCount = 0;
     for (const p of products) {
-      if (!p.name || existingNames.has(p.name.toLowerCase().trim())) {
+      if (!p.id || existingIds.has(String(p.id))) {
         continue;
       }
 
       await db.execute<ResultSetHeader>(
         `INSERT INTO products (
-          name, description, category, fabric, color, collection,
+          id, name, description, category, fabric, color, collection,
           inventory, price, original_price, image_url
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        ON DUPLICATE KEY UPDATE
+          name = VALUES(name),
+          description = VALUES(description),
+          category = VALUES(category),
+          fabric = VALUES(fabric),
+          color = VALUES(color),
+          collection = VALUES(collection),
+          price = VALUES(price),
+          original_price = VALUES(original_price),
+          image_url = VALUES(image_url)`,
         [
+          Number(p.id),
           p.name.trim(),
           p.description?.trim() ?? '',
           p.category?.trim() ?? 'Sarees',
@@ -70,7 +81,7 @@ export async function POST(request: NextRequest) {
           p.image?.trim() ?? null,
         ]
       );
-      existingNames.add(p.name.toLowerCase().trim());
+      existingIds.add(String(p.id));
       seededCount++;
     }
 

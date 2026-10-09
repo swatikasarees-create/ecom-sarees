@@ -9,8 +9,8 @@ RewriteRule ^ - [R=404,L]
 RewriteCond %{HTTPS} !=on
 RewriteRule ^ https://%{HTTP_HOST}%{REQUEST_URI} [R=301,L]
 
-# 2) Force single host (www canonical)
-RewriteCond %{HTTP_HOST} !^www\.swatikasarees\.com$ [NC]
+# 2) Redirect non-www to www for swatikasarees.com
+RewriteCond %{HTTP_HOST} ^swatikasarees\.com$ [NC]
 RewriteRule ^ https://www.swatikasarees.com%{REQUEST_URI} [R=301,L]
 
 # 3) Remove explicit index.html from URLs

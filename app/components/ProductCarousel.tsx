@@ -58,12 +58,14 @@ export default function ProductCarousel({ title, products, sectionId }: ProductC
     };
   }, []);
 
-  const isOutOfStock = (product: { id: number | string }) => {
+  const isOutOfStock = (product: { id: number | string; name?: string }) => {
     const stock = stockMap[String(product.id)];
     if (stock) {
       return stock.availability === 'out_of_stock' || stock.inventory <= 0;
     }
-    const cat = allProducts.find((p) => String(p.id) === String(product.id));
+    const cat =
+      allProducts.find((p) => String(p.id) === String(product.id)) ||
+      (product.name ? allProducts.find((p) => p.name.trim().toLowerCase() === product.name?.trim().toLowerCase()) : null);
     if (cat) {
       return cat.availability === 'out_of_stock' || (cat.inventory !== undefined && cat.inventory <= 0);
     }
@@ -71,7 +73,10 @@ export default function ProductCarousel({ title, products, sectionId }: ProductC
   };
 
   const openProductModal = (product: Product) => {
-    const full = allProducts.find((p) => String(p.id) === String(product.id));
+    const full =
+      allProducts.find((p) => String(p.id) === String(product.id)) ||
+      allProducts.find((p) => p.name.trim().toLowerCase() === product.name.trim().toLowerCase()) ||
+      allProducts.find((p) => p.name.toLowerCase().includes(product.name.toLowerCase()));
     if (full) {
       setSelectedProduct(full);
     } else {
@@ -104,8 +109,13 @@ export default function ProductCarousel({ title, products, sectionId }: ProductC
     const numeric = Number(price.replace(/[^\d]/g, ''));
     return Number.isFinite(numeric) ? numeric : 0;
   };
-  const getCheckoutHref = (product: Product) =>
-    `/checkout?productId=${product.id}&product=${encodeURIComponent(product.name)}`;
+  const getCheckoutHref = (product: Product) => {
+    const full =
+      allProducts.find((p) => String(p.id) === String(product.id)) ||
+      allProducts.find((p) => p.name.trim().toLowerCase() === product.name.trim().toLowerCase());
+    const targetId = full ? full.id : product.id;
+    return `/checkout?productId=${targetId}&product=${encodeURIComponent(product.name)}`;
+  };
 
   const handleToggleWishlist = (product: Product) => {
     toggleWishlist({
