@@ -43,8 +43,13 @@ export async function POST(request: NextRequest) {
     );
   }
 
-  const keyId = process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID?.trim();
-  const keySecret = process.env.RAZORPAY_KEY_SECRET?.trim();
+  let keyId = process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID?.trim();
+  let keySecret = process.env.RAZORPAY_KEY_SECRET?.trim();
+
+  // Handle common typo where 'rzp_live_' was accidentally pasted with an extra leading 'r' ('rrzp_live_')
+  if (keyId?.startsWith('rrzp_')) {
+    keyId = keyId.slice(1);
+  }
 
   if (!keyId || !keySecret) {
     return jsonWithCors(
