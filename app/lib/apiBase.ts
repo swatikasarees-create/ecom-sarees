@@ -9,8 +9,13 @@ export function getApiBaseUrl(): string {
 
   if (typeof window !== 'undefined') {
     const host = window.location.hostname.toLowerCase();
-    if (host === 'www.swatikasarees.com' || host === 'swatikasarees.com') {
-      const fb = process.env.NEXT_PUBLIC_VERCEL_API_FALLBACK?.trim();
+    if (
+      host === 'www.swatikasarees.com' ||
+      host === 'swatikasarees.com' ||
+      host.includes('hostingersite.com') ||
+      host.includes('hostinger')
+    ) {
+      const fb = process.env.NEXT_PUBLIC_VERCEL_API_FALLBACK?.trim() || 'https://ecom-sarees.vercel.app';
       if (fb) return fb.replace(/\/$/, '');
     }
   }

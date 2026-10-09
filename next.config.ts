@@ -6,7 +6,7 @@ const isStaticExport = process.env.STATIC_EXPORT === "true";
 const vercelApiFallback =
   process.env.NEXT_PUBLIC_VERCEL_API_FALLBACK?.trim() ||
   process.env.NEXT_PUBLIC_API_BASE_URL?.trim() ||
-  "https://ecom-dev-tan.vercel.app";
+  "https://ecom-sarees.vercel.app";
 
 const nextConfig: NextConfig = {
   images: {
