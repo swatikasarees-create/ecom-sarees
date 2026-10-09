@@ -1,7 +1,6 @@
 RewriteEngine On
 
-# API routes are hosted on Vercel (see NEXT_PUBLIC_API_BASE_URL). If the browser still
-# requests /api/* on this host, do not chain HTML rewrites — return 404.
+# API routes are hosted on Vercel. If the browser still requests /api/* on this host, return 404.
 RewriteCond %{REQUEST_URI} ^/api/ [NC]
 RewriteRule ^ - [R=404,L]
 
@@ -17,24 +16,16 @@ RewriteRule ^ https://www.swatikasarees.com%{REQUEST_URI} [R=301,L]
 RewriteCond %{THE_REQUEST} \s/+(.*/)?index\.html[\s?] [NC]
 RewriteRule ^(.*/)?index\.html$ /$1 [R=301,L]
 
-# 3b) Admin portal direct rewrites (supports /admin, /admin/, /admin/login, etc.)
-RewriteRule ^admin/?$ admin.html [L]
-RewriteRule ^admin/login/?$ admin/login.html [L]
-RewriteRule ^admin/products/?$ admin/products.html [L]
-RewriteRule ^admin/orders/?$ admin/orders.html [L]
-
-# 4) Convert pseudo-route directories (/suit/) to route files (/suit)
+# 4) If the request matches an existing file or directory directly, serve it immediately
+RewriteCond %{REQUEST_FILENAME} -f [OR]
 RewriteCond %{REQUEST_FILENAME} -d
-RewriteCond %{REQUEST_FILENAME}index.html !-f
-RewriteCond %{DOCUMENT_ROOT}/$1.html -f
-RewriteRule ^(.+)/$ /$1 [R=301,L]
+RewriteRule ^ - [L]
 
-# 5) Remove trailing slash on non-directory URLs
-RewriteCond %{REQUEST_FILENAME} !-d
-RewriteRule ^(.+)/$ /$1 [R=301,L]
+# 5) If request matches a directory with index.html (e.g. /cart/index.html when requesting /cart)
+RewriteCond %{DOCUMENT_ROOT}/$1/index.html -f
+RewriteRule ^(.*)/?$ $1/index.html [L]
 
-# 6) Serve exported HTML for extensionless paths
-RewriteCond %{REQUEST_FILENAME} !-f
-RewriteCond %{REQUEST_FILENAME} !-d
+# 6) If request matches an exported HTML file (e.g. /cart.html when requesting /cart)
 RewriteCond %{DOCUMENT_ROOT}/$1.html -f
-RewriteRule ^(.+)$ $1.html [L]
+RewriteRule ^(.*)/?$ $1.html [L]
+

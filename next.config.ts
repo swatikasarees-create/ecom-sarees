@@ -15,7 +15,7 @@ const nextConfig: NextConfig = {
   env: {
     NEXT_PUBLIC_VERCEL_API_FALLBACK: vercelApiFallback,
   },
-  ...(isStaticExport ? { output: "export" as const } : {}),
+  ...(isStaticExport ? { output: "export" as const, trailingSlash: true } : {}),
 };
 
 export default nextConfig;
