@@ -84,11 +84,12 @@ export async function GET(request: NextRequest) {
     );
     const items = itemsRows as DbOrderItem[];
 
-    const groupedItems = new Map<number, DbOrderItem[]>();
+    const groupedItems = new Map<string, DbOrderItem[]>();
     for (const item of items) {
-      const bucket = groupedItems.get(item.order_id) ?? [];
+      const orderKey = String(item.order_id);
+      const bucket = groupedItems.get(orderKey) ?? [];
       bucket.push(item);
-      groupedItems.set(item.order_id, bucket);
+      groupedItems.set(orderKey, bucket);
     }
 
     return jsonWithCors(request, {
@@ -110,7 +111,7 @@ export async function GET(request: NextRequest) {
         status: order.status,
         createdAt: order.created_at,
         updatedAt: order.updated_at,
-        items: (groupedItems.get(order.id) ?? []).map((item) => ({
+        items: (groupedItems.get(String(order.id)) ?? []).map((item) => ({
           id: item.id,
           productId: item.product_id,
           productName: item.product_name,
