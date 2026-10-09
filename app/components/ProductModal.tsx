@@ -41,15 +41,36 @@ export default function ProductModal({
     dragStateRef.current = null;
   }, [product]);
 
+  // Lock background body scroll while modal is active
   useEffect(() => {
     if (!product) return;
+
+    const originalOverflow = document.body.style.overflow;
+    const originalOverscroll = document.body.style.overscrollBehavior;
+    const originalPaddingRight = document.body.style.paddingRight;
+
+    // Prevent desktop horizontal layout shift when scrollbar vanishes
+    const scrollBarWidth = window.innerWidth - document.documentElement.clientWidth;
+    if (scrollBarWidth > 0) {
+      document.body.style.paddingRight = `${scrollBarWidth}px`;
+    }
+
+    document.body.style.overflow = 'hidden';
+    document.body.style.overscrollBehavior = 'contain';
+
     const onEscape = (event: KeyboardEvent) => {
       if (event.key === 'Escape') {
         onClose();
       }
     };
     window.addEventListener('keydown', onEscape);
-    return () => window.removeEventListener('keydown', onEscape);
+
+    return () => {
+      document.body.style.overflow = originalOverflow;
+      document.body.style.overscrollBehavior = originalOverscroll;
+      document.body.style.paddingRight = originalPaddingRight;
+      window.removeEventListener('keydown', onEscape);
+    };
   }, [product, onClose]);
 
   if (!product) return null;
@@ -122,12 +143,17 @@ export default function ProductModal({
       style={{
         position: 'fixed',
         inset: 0,
-        backgroundColor: 'rgba(0, 0, 0, 0.65)',
+        backgroundColor: 'rgba(0, 0, 0, 0.72)',
+        backdropFilter: 'blur(3px)',
+        WebkitBackdropFilter: 'blur(3px)',
         zIndex: 10500,
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
-        padding: '16px',
+        padding: '12px',
+        overflowY: 'auto',
+        overscrollBehavior: 'contain',
+        WebkitOverflowScrolling: 'touch',
       }}
     >
       <div
@@ -136,15 +162,52 @@ export default function ProductModal({
         onClick={(event) => event.stopPropagation()}
         style={{
           width: 'min(980px, 100%)',
-          maxHeight: '90vh',
+          maxHeight: 'min(92vh, 880px)',
           background: '#fff',
-          borderRadius: '14px',
-          overflow: 'hidden',
-          boxShadow: '0 25px 60px rgba(0,0,0,0.3)',
+          borderRadius: '16px',
+          overflowY: 'auto',
+          overscrollBehavior: 'contain',
+          WebkitOverflowScrolling: 'touch',
+          boxShadow: '0 25px 60px rgba(0,0,0,0.35)',
+          position: 'relative',
+          display: 'flex',
+          flexDirection: 'column',
+          margin: 'auto',
         }}
       >
-        <div className="row g-0">
-          <div className="col-md-6">
+        {/* Floating Close Button - Always visible and easily tappable on any screen */}
+        <button
+          type="button"
+          onClick={onClose}
+          aria-label="Close"
+          style={{
+            position: 'absolute',
+            top: '12px',
+            right: '12px',
+            zIndex: 15,
+            width: '36px',
+            height: '36px',
+            borderRadius: '50%',
+            backgroundColor: 'rgba(255, 255, 255, 0.95)',
+            border: '1px solid rgba(0, 0, 0, 0.12)',
+            boxShadow: '0 2px 8px rgba(0, 0, 0, 0.2)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            cursor: 'pointer',
+            color: '#1c1b1f',
+            fontSize: '18px',
+            fontWeight: '600',
+            lineHeight: 1,
+            padding: 0,
+          }}
+        >
+          ✕
+        </button>
+
+        <div className="row g-0 flex-grow-1 align-items-stretch">
+          {/* Image Column */}
+          <div className="col-12 col-md-6 position-relative d-flex flex-column">
             <div
               ref={imageViewportRef}
               onPointerDown={onImagePointerDown}
@@ -154,11 +217,12 @@ export default function ProductModal({
               style={{
                 position: 'relative',
                 width: '100%',
-                minHeight: '55vh',
+                height: '100%',
+                minHeight: 'clamp(280px, 45vh, 520px)',
                 background: '#f8f8f8',
                 overflow: 'hidden',
                 cursor: zoomLevel > 1 ? (isDraggingImage ? 'grabbing' : 'grab') : 'default',
-                touchAction: zoomLevel > 1 ? 'none' : 'auto',
+                touchAction: zoomLevel > 1 ? 'none' : 'pan-y',
               }}
             >
               <div
@@ -213,12 +277,12 @@ export default function ProductModal({
 
               <div
                 className="d-flex flex-column gap-2"
-                style={{ position: 'absolute', right: 12, top: 12, zIndex: 2 }}
+                style={{ position: 'absolute', right: 54, top: 12, zIndex: 2 }}
               >
                 <button
                   type="button"
                   className="btn btn-light border"
-                  style={{ width: 36, height: 36, padding: 0, fontSize: '1.1rem', lineHeight: 1 }}
+                  style={{ width: 34, height: 34, padding: 0, fontSize: '1.1rem', lineHeight: 1 }}
                   onClick={(event) => {
                     event.stopPropagation();
                     setZoomLevel((prev) => {
@@ -234,7 +298,7 @@ export default function ProductModal({
                 <button
                   type="button"
                   className="btn btn-light border"
-                  style={{ width: 36, height: 36, padding: 0, fontSize: '1.2rem', lineHeight: 1 }}
+                  style={{ width: 34, height: 34, padding: 0, fontSize: '1.2rem', lineHeight: 1 }}
                   onClick={(event) => {
                     event.stopPropagation();
                     setZoomLevel((prev) => {
@@ -250,12 +314,16 @@ export default function ProductModal({
               </div>
             </div>
           </div>
-          <div className="col-md-6">
-            <div className="p-3 p-md-4">
-              <div className="d-flex justify-content-between align-items-start gap-3">
-                <h4 className="mb-2">{product.name}</h4>
-                <button type="button" className="btn-close" onClick={onClose} aria-label="Close" />
+
+          {/* Details Column */}
+          <div className="col-12 col-md-6 d-flex flex-column justify-content-between p-3 p-md-4">
+            <div>
+              <div className="pe-5">
+                <h4 className="mb-2 fw-bold" style={{ fontSize: 'clamp(1.15rem, 2.5vw, 1.45rem)', color: '#212529' }}>
+                  {product.name}
+                </h4>
               </div>
+
               {isOutOfStock ? (
                 <div className="mb-2">
                   <span className="badge bg-dark text-uppercase px-2 py-1" style={{ letterSpacing: '0.5px' }}>
@@ -269,57 +337,76 @@ export default function ProductModal({
                   </span>
                 </div>
               ) : null}
-              <p className="text-muted mb-2">
+
+              <p className="text-muted mb-2 small">
                 {product.category} {product.fabric ? `• ${product.fabric}` : ''}
               </p>
-              <div className="d-flex align-items-center gap-2 mb-3">
-                <span className="fw-bold fs-5">₹{product.price.toLocaleString('en-IN')}</span>
+
+              <div className="d-flex align-items-baseline gap-2 mb-3">
+                <span className="fw-bold fs-4 text-dark">₹{product.price.toLocaleString('en-IN')}</span>
                 {product.originalPrice && (
-                  <span className="text-muted text-decoration-line-through">
+                  <span className="text-muted text-decoration-line-through small">
                     ₹{product.originalPrice.toLocaleString('en-IN')}
                   </span>
                 )}
               </div>
-              <p className="text-muted mb-4">{product.description || 'No description available.'}</p>
-              <div className="d-flex flex-wrap gap-2">
-                <button
-                  type="button"
-                  className={`btn ${isOutOfStock ? 'btn-outline-danger' : isMaxInCart ? 'btn-secondary' : 'btn-dark'}`}
-                  onClick={() => {
-                    if (isOutOfStock) {
-                      showSnackbar(`"${product.name}" is currently out of stock.`, 'warning');
-                      return;
-                    }
-                    if (isMaxInCart) {
-                      showSnackbar(`Only ${maxStock} piece(s) available for "${product.name}". You already have ${currentInCart} in your cart.`, 'warning');
-                      return;
-                    }
-                    onAddToCart(product);
-                  }}
-                >
-                  {isOutOfStock ? 'Out of Stock' : isMaxInCart ? `Max in Cart (${currentInCart})` : 'Add to Cart'}
-                </button>
-                {isOutOfStock ? (
-                  <button
-                    type="button"
-                    className="btn btn-outline-secondary text-muted"
-                    onClick={() => showSnackbar(`"${product.name}" is currently out of stock.`, 'warning')}
-                  >
-                    Unavailable
-                  </button>
-                ) : (
-                  <Link href={shopNowHref} className="btn btn-outline-dark">
-                    Shop now
-                  </Link>
-                )}
-                <button
-                  type="button"
-                  className={`btn ${isWishlisted ? 'btn-danger' : 'btn-outline-danger'}`}
-                  onClick={() => onToggleWishlist(product)}
-                >
-                  {isWishlisted ? '♥ Saved in Wishlist' : '♡ Add to Wishlist'}
-                </button>
+
+              <div className="mb-4">
+                <p className="text-muted" style={{ lineHeight: 1.6, fontSize: '0.95rem' }}>
+                  {product.description || 'No description available.'}
+                </p>
               </div>
+            </div>
+
+            {/* Action Buttons */}
+            <div className="d-flex flex-wrap gap-2 pt-3 border-top mt-auto">
+              <button
+                type="button"
+                className={`btn flex-grow-1 ${isOutOfStock ? 'btn-outline-danger' : isMaxInCart ? 'btn-secondary' : 'btn-dark'}`}
+                style={{ padding: '10px 16px', fontWeight: '600' }}
+                onClick={() => {
+                  if (isOutOfStock) {
+                    showSnackbar(`"${product.name}" is currently out of stock.`, 'warning');
+                    return;
+                  }
+                  if (isMaxInCart) {
+                    showSnackbar(`Only ${maxStock} piece(s) available for "${product.name}". You already have ${currentInCart} in your cart.`, 'warning');
+                    return;
+                  }
+                  onAddToCart(product);
+                }}
+              >
+                {isOutOfStock ? 'Out of Stock' : isMaxInCart ? `Max in Cart (${currentInCart})` : 'Add to Cart'}
+              </button>
+
+              {isOutOfStock ? (
+                <button
+                  type="button"
+                  className="btn btn-outline-secondary text-muted"
+                  style={{ padding: '10px 16px' }}
+                  onClick={() => showSnackbar(`"${product.name}" is currently out of stock.`, 'warning')}
+                >
+                  Unavailable
+                </button>
+              ) : (
+                <Link
+                  href={shopNowHref}
+                  className="btn btn-outline-dark"
+                  style={{ padding: '10px 16px', fontWeight: '600' }}
+                >
+                  Shop now
+                </Link>
+              )}
+
+              <button
+                type="button"
+                className={`btn ${isWishlisted ? 'btn-danger' : 'btn-outline-danger'}`}
+                style={{ padding: '10px 16px' }}
+                onClick={() => onToggleWishlist(product)}
+                aria-label={isWishlisted ? 'Saved in Wishlist' : 'Add to Wishlist'}
+              >
+                {isWishlisted ? '♥ Saved' : '♡ Wishlist'}
+              </button>
             </div>
           </div>
         </div>
