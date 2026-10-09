@@ -4,8 +4,9 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { useRouter, useSearchParams } from 'next/navigation';
 import type { CSSProperties } from 'react';
-import { FormEvent, useEffect, useMemo, useState } from 'react';
+import { FormEvent, useEffect, useMemo, useRef, useState } from 'react';
 import { getCart, getStoreEventName, removeFromCart, type CartItem } from '../lib/commerceStore';
+import { getWishlist, getWishlistEventName } from '../lib/wishlistStore';
 import { getCatalogProducts } from '../lib/productData';
 
 export default function Header() {
@@ -16,7 +17,9 @@ export default function Header() {
   const [isCartOpen, setIsCartOpen] = useState(false);
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [cartItems, setCartItems] = useState<CartItem[]>([]);
+  const [wishlistCount, setWishlistCount] = useState(0);
   const [searchTerm, setSearchTerm] = useState('');
+  const searchInputRef = useRef<HTMLInputElement | null>(null);
 
   /** Same display font as "Saree Collection" (h2 uses Marcellus / --heading-font in style.css). */
   const navFontStyle: CSSProperties = {
@@ -38,6 +41,36 @@ export default function Header() {
     return () => window.removeEventListener(eventName, syncStore);
   }, []);
 
+  useEffect(() => {
+    const syncWishlist = () => {
+      setWishlistCount(getWishlist().length);
+    };
+    syncWishlist();
+    const eventName = getWishlistEventName();
+    window.addEventListener(eventName, syncWishlist);
+    return () => window.removeEventListener(eventName, syncWishlist);
+  }, []);
+
+  useEffect(() => {
+    if (isSearchOpen) {
+      const timer = setTimeout(() => {
+        searchInputRef.current?.focus();
+      }, 100);
+      return () => clearTimeout(timer);
+    }
+  }, [isSearchOpen]);
+
+  useEffect(() => {
+    if (!isSearchOpen) return;
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        setIsSearchOpen(false);
+      }
+    };
+    window.addEventListener('keydown', onKeyDown);
+    return () => window.removeEventListener('keydown', onKeyDown);
+  }, [isSearchOpen]);
+
   const cartCount = useMemo(
     () => cartItems.reduce((sum, item) => sum + item.qty, 0),
     [cartItems]
@@ -54,19 +87,13 @@ export default function Header() {
       .slice(0, 8);
   }, [searchTerm, showTestCatalog]);
 
-  const toCheckoutHref = (productId: string, productName: string) =>
-    `/checkout?productId=${productId}&product=${encodeURIComponent(productName)}`;
-
   const onSearchSubmit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     const query = searchTerm.trim();
     if (!query) return;
-    if (searchMatches.length > 0) {
-      const topMatch = searchMatches[0];
-      router.push(toCheckoutHref(topMatch.id, topMatch.name));
-      setIsSearchOpen(false);
-      setSearchTerm('');
-    }
+    router.push(`/sarees?q=${encodeURIComponent(query)}`);
+    setIsSearchOpen(false);
+    setSearchTerm('');
   };
 
   return (
@@ -118,24 +145,53 @@ export default function Header() {
           <symbol xmlns="http://www.w3.org/2000/svg" id="package-search" viewBox="0 0 24 24">
             <path fill="currentColor" d="M3 4a2 2 0 0 1 2-2h6.172a2 2 0 0 1 1.414.586l1.828 1.828A2 2 0 0 0 14.828 5H19a2 2 0 0 1 2 2v3h-8l-2-2H5v10h6v2H5a2 2 0 0 1-2-2V4zm11 11.414l4.95 4.95l-1.414 1.414L12.586 17H11v-2h2v-.586zM11 15a4 4 0 1 1 8 0a4 4 0 0 1-8 0z" />
           </symbol>
+          <symbol xmlns="http://www.w3.org/2000/svg" id="heart" viewBox="0 0 24 24">
+            <path fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/>
+          </symbol>
         </defs>
       </svg>
 
       {/* Search Popup */}
-      <div className={`search-popup ${isSearchOpen ? 'show' : ''}`}>
+      <div
+        className={`search-popup ${isSearchOpen ? 'is-visible show' : ''}`}
+        onClick={(e) => {
+          if (e.target === e.currentTarget) {
+            setIsSearchOpen(false);
+          }
+        }}
+        role="dialog"
+        aria-modal="true"
+        aria-label="Search site"
+      >
+        <button
+          type="button"
+          className="btn-close search-popup-close-btn"
+          onClick={() => {
+            setIsSearchOpen(false);
+            setSearchTerm('');
+          }}
+          aria-label="Close search"
+        />
+
         <div className="search-popup-container">
-          <form role="search" method="get" className="form-group" action="" onSubmit={onSearchSubmit}>
+          <form role="search" method="get" className="form-group position-relative" action="" onSubmit={onSearchSubmit}>
             <input
+              ref={searchInputRef}
               type="search"
               id="search-form"
               className="form-control border-0 border-bottom"
-              placeholder="Search product by name"
+              placeholder="Search sarees, suits, fabrics, colors..."
               name="s"
               value={searchTerm}
               onChange={(event) => setSearchTerm(event.target.value)}
+              autoComplete="off"
             />
-            <button type="submit" className="search-submit border-0 position-absolute bg-white"
-              style={{ top: '15px', right: '15px' }}>
+            <button
+              type="submit"
+              className="search-submit border-0 position-absolute bg-white"
+              style={{ top: '15px', right: '15px' }}
+              aria-label="Submit search"
+            >
               <svg className="search" width="24" height="24">
                 <use xlinkHref="#search"></use>
               </svg>
@@ -143,14 +199,14 @@ export default function Header() {
           </form>
 
           {searchTerm.trim().length > 0 && (
-            <div className="mb-4">
+            <div className="mb-4 text-start">
               <h5 className="cat-list-title">Search Results</h5>
               {searchMatches.length > 0 ? (
-                <ul className="cat-list">
+                <ul className="cat-list list-unstyled">
                   {searchMatches.map((product) => (
-                    <li key={product.id} className="cat-list-item">
+                    <li key={product.id} className="cat-list-item py-1">
                       <Link
-                        href={toCheckoutHref(product.id, product.name)}
+                        href={`/sarees?q=${encodeURIComponent(product.name)}`}
                         title={product.name}
                         onClick={() => {
                           setIsSearchOpen(false);
@@ -164,22 +220,22 @@ export default function Header() {
                 </ul>
               ) : (
                 <p className="text-muted mb-0" style={{ fontSize: '0.9rem' }}>
-                  No products found for &quot;{searchTerm.trim()}&quot;.
+                  No exact match for &quot;{searchTerm.trim()}&quot;. Press Enter to search catalog.
                 </p>
               )}
             </div>
           )}
 
-          <h5 className="cat-list-title">Browse Categories</h5>
-          <ul className="cat-list">
-            <li className="cat-list-item"><Link href="/sarees?type=designer" title="Designer Sarees">Designer Sarees</Link></li>
-            <li className="cat-list-item"><Link href="/sarees?type=silk" title="Silk Sarees">Silk Sarees</Link></li>
-            <li className="cat-list-item"><Link href="/sarees?type=cotton" title="Cotton Sarees">Cotton Sarees</Link></li>
-            <li className="cat-list-item"><Link href="/sarees?type=banarasi" title="Banarasi Sarees">Banarasi Sarees</Link></li>
-            <li className="cat-list-item"><Link href="/sarees?type=patola" title="Patola Sarees">Patola Sarees</Link></li>
-            <li className="cat-list-item"><Link href="/sarees?type=wedding" title="Wedding Sarees">Wedding Sarees</Link></li>
-            <li className="cat-list-item"><Link href="/sarees?type=party" title="Party Wear Sarees">Party Wear Sarees</Link></li>
-            <li className="cat-list-item"><Link href="/suit" title="Suit">Suit</Link></li>
+          <h5 className="cat-list-title text-start">Browse Categories</h5>
+          <ul className="cat-list list-unstyled">
+            <li className="cat-list-item"><Link href="/sarees?type=designer" onClick={() => setIsSearchOpen(false)} title="Designer Sarees">Designer Sarees</Link></li>
+            <li className="cat-list-item"><Link href="/sarees?type=silk" onClick={() => setIsSearchOpen(false)} title="Silk Sarees">Silk Sarees</Link></li>
+            <li className="cat-list-item"><Link href="/sarees?type=cotton" onClick={() => setIsSearchOpen(false)} title="Cotton Sarees">Cotton Sarees</Link></li>
+            <li className="cat-list-item"><Link href="/sarees?type=banarasi" onClick={() => setIsSearchOpen(false)} title="Banarasi Sarees">Banarasi Sarees</Link></li>
+            <li className="cat-list-item"><Link href="/sarees?type=patola" onClick={() => setIsSearchOpen(false)} title="Patola Sarees">Patola Sarees</Link></li>
+            <li className="cat-list-item"><Link href="/sarees?type=wedding" onClick={() => setIsSearchOpen(false)} title="Wedding Sarees">Wedding Sarees</Link></li>
+            <li className="cat-list-item"><Link href="/sarees?type=party" onClick={() => setIsSearchOpen(false)} title="Party Wear Sarees">Party Wear Sarees</Link></li>
+            <li className="cat-list-item"><Link href="/suit" onClick={() => setIsSearchOpen(false)} title="Suit">Suit</Link></li>
           </ul>
         </div>
       </div>
@@ -257,8 +313,23 @@ export default function Header() {
               />
             </Link>
 
-            {/* Mobile Icons - Right: Track, Cart */}
+            {/* Mobile Icons - Right: Wishlist, Track, Cart */}
             <div className="d-flex align-items-center gap-2" style={{ order: 3 }}>
+              <Link
+                href="/wishlist"
+                className="d-flex align-items-center position-relative swatika-header-icon-link"
+                title="Wishlist"
+                aria-label="Wishlist"
+              >
+                <svg width="20" height="20" viewBox="0 0 24 24">
+                  <use xlinkHref="#heart"></use>
+                </svg>
+                {wishlistCount > 0 && (
+                  <span className="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger" style={{ fontSize: '0.62rem' }}>
+                    {wishlistCount}
+                  </span>
+                )}
+              </Link>
               <Link
                 href="/track-order"
                 className="d-flex align-items-center swatika-header-icon-link"
@@ -286,11 +357,17 @@ export default function Header() {
                   </span>
                 )}
               </a>
-              {/* <a href="#search" className="search-button d-flex align-items-center" onClick={(e) => { e.preventDefault(); setIsSearchOpen(!isSearchOpen); }}>
+              <button
+                type="button"
+                className="btn btn-link p-0 d-flex align-items-center swatika-header-icon-link text-decoration-none"
+                style={{ color: '#111' }}
+                onClick={() => setIsSearchOpen(true)}
+                aria-label="Search products"
+              >
                 <svg width="20" height="20" viewBox="0 0 24 24">
                   <use xlinkHref="#search"></use>
                 </svg>
-              </a> */}
+              </button>
             </div>
           </div>
 
@@ -390,6 +467,16 @@ export default function Header() {
                   </Link>
                 </li>
                 <li className="nav-item">
+                  <Link
+                    className="nav-link"
+                    href="/wishlist"
+                    onClick={() => setIsOffcanvasOpen(false)}
+                    style={{ ...navFontStyle, fontSize: 'clamp(0.85rem, 2vw, 0.95rem)' }}
+                  >
+                    Wishlist {wishlistCount > 0 && `(${wishlistCount})`}
+                  </Link>
+                </li>
+                <li className="nav-item">
                   <Link className="nav-link" href="/track-order" style={{ ...navFontStyle, fontSize: 'clamp(0.85rem, 2vw, 0.95rem)' }}>
                     Track order
                   </Link>
@@ -401,9 +488,18 @@ export default function Header() {
             </div>
           </div>
 
-          {/* Desktop Icons - Right: Track order, Cart, Search */}
+          {/* Desktop Icons - Right: Wishlist, Track order, Cart, Search */}
           <div className="d-none d-lg-flex align-items-center ms-auto">
             <ul className="list-unstyled d-flex m-0 align-items-center gap-3">
+              <li>
+                <Link
+                  href="/wishlist"
+                  className="text-uppercase text-decoration-none swatika-header-utility"
+                  style={{ ...navFontStyle, whiteSpace: 'nowrap' }}
+                >
+                  Wishlist <span className="wishlist-count">({wishlistCount})</span>
+                </Link>
+              </li>
               <li>
                 <Link
                   href="/track-order"
@@ -427,19 +523,17 @@ export default function Header() {
                 </a>
               </li>
               <li className="search-box">
-                <a
-                  href="#search"
-                  className="search-button d-flex align-items-center swatika-header-utility"
+                <button
+                  type="button"
+                  className="btn btn-link p-0 search-button d-flex align-items-center swatika-header-utility text-decoration-none"
                   style={{ color: navFontStyle.color }}
-                  onClick={(e) => {
-                    e.preventDefault();
-                    setIsSearchOpen(!isSearchOpen);
-                  }}
+                  onClick={() => setIsSearchOpen(true)}
+                  aria-label="Search products"
                 >
                   <svg width="20" height="20" viewBox="0 0 24 24">
                     <use xlinkHref="#search"></use>
                   </svg>
-                </a>
+                </button>
               </li>
             </ul>
           </div>
@@ -447,6 +541,50 @@ export default function Header() {
       </nav>
 
       <style jsx global>{`
+        .search-popup {
+          position: fixed !important;
+          top: 0 !important;
+          left: 0 !important;
+          width: 100vw !important;
+          height: 100vh !important;
+          background-color: rgba(255, 255, 255, 0.98) !important;
+          z-index: 99999 !important;
+          opacity: 0;
+          visibility: hidden;
+          transition: opacity 0.25s ease, visibility 0.25s ease;
+          overflow-y: auto;
+          padding: 40px 20px;
+        }
+        .search-popup.is-visible,
+        .search-popup.show {
+          opacity: 1 !important;
+          visibility: visible !important;
+          display: block !important;
+        }
+        .search-popup-close-btn {
+          position: fixed !important;
+          top: 25px !important;
+          right: 30px !important;
+          width: 32px !important;
+          height: 32px !important;
+          z-index: 100000 !important;
+          cursor: pointer;
+        }
+        .search-popup-container {
+          max-width: 760px;
+          margin: 60px auto 40px;
+          position: relative;
+        }
+        .search-popup input#search-form {
+          font-size: clamp(1.2rem, 3vw, 1.8rem);
+          padding-bottom: 12px;
+          border-bottom: 2px solid #222 !important;
+          border-radius: 0;
+        }
+        .search-popup input#search-form:focus {
+          box-shadow: none;
+          border-bottom-color: #dc747d !important;
+        }
         nav.sticky-header .navbar-brand {
           transition: opacity 0.22s ease;
         }

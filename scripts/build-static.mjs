@@ -21,21 +21,39 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const root = path.join(__dirname, "..");
 
 const ROUTES = [
+  "app/api/admin/login/route.ts",
+  "app/api/admin/logout/route.ts",
   "app/api/admin/orders/route.ts",
+  "app/api/admin/orders/[id]/route.ts",
+  "app/api/admin/products/route.ts",
+  "app/api/admin/products/[id]/route.ts",
+  "app/api/admin/seed/route.ts",
   "app/api/admin/session/route.ts",
+  "app/api/admin/upload/route.ts",
+  "app/api/orders/route.ts",
   "app/api/orders/track/route.ts",
+  "app/api/products/route.ts",
+  "app/api/razorpay/create-order/route.ts",
 ];
 
 const STUB = `import { NextResponse } from "next/server";
 
 export const dynamic = "force-static";
 
-export async function GET() {
-  return NextResponse.json(
-    { message: "This API is disabled in static export mode." },
-    { status: 503 }
-  );
+export function generateStaticParams() {
+  return [{ id: "stub" }];
 }
+
+const disabled = () => NextResponse.json(
+  { message: "This API is disabled in static export mode." },
+  { status: 503 }
+);
+
+export async function GET() { return disabled(); }
+export async function POST() { return disabled(); }
+export async function PUT() { return disabled(); }
+export async function PATCH() { return disabled(); }
+export async function DELETE() { return disabled(); }
 `;
 
 const backups = new Map();

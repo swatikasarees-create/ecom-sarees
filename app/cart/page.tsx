@@ -15,7 +15,8 @@ import {
   updateCartQty,
 } from '../lib/commerceStore';
 import { apiFetchCredentials, apiUrl } from '../lib/apiBase';
-import { getCatalogProducts, TEST_CATALOG_PRODUCT_ID } from '../lib/productData';
+import { getCatalogProducts, TEST_CATALOG_PRODUCT_ID, type Product } from '../lib/productData';
+import { showSnackbar } from '../lib/snackbar';
 
 const RAZORPAY_SCRIPT_ID = 'razorpay-checkout-js';
 
@@ -31,6 +32,7 @@ interface RazorpayCheckoutOptions {
   currency: string;
   name: string;
   description?: string;
+  order_id?: string;
   handler: (response: RazorpaySuccessResponse) => void;
   prefill?: {
     name?: string;
@@ -80,6 +82,54 @@ function CartContent() {
     () => getCatalogProducts(includeTestCatalog),
     [includeTestCatalog]
   );
+  const [liveProducts, setLiveProducts] = useState<Product[]>(catalogProducts);
+
+  const getProductInventory = (id: string): number | undefined => {
+    const p =
+      liveProducts.find((prod) => String(prod.id) === String(id)) ||
+      catalogProducts.find((prod) => String(prod.id) === String(id));
+    if (!p) return undefined;
+    if (p.availability === 'out_of_stock') return 0;
+    return typeof p.inventory === 'number' ? p.inventory : undefined;
+  };
+
+  useEffect(() => {
+    let active = true;
+    const testQuery = includeTestCatalog ? '?test=1' : '';
+    fetch(apiUrl(`/api/products${testQuery}`))
+      .then((res) => (res.ok ? res.json() : null))
+      .then((data) => {
+        if (active && Array.isArray(data?.products) && data.products.length > 0) {
+          setLiveProducts(data.products);
+        }
+      })
+      .catch(() => {});
+    return () => {
+      active = false;
+    };
+  }, [includeTestCatalog]);
+
+  // Auto-clamp any cart items that exceed live inventory
+  useEffect(() => {
+    if (liveProducts.length === 0) return;
+    let modified = false;
+    const currentCart = getCart();
+    for (const item of currentCart) {
+      const max = getProductInventory(item.id);
+      if (typeof max === 'number' && item.qty > max) {
+        updateCartQty(item.id, max, max);
+        modified = true;
+        if (max > 0) {
+          showSnackbar(`Adjusted quantity for "${item.name}" to available stock (${max}).`, 'info');
+        } else {
+          showSnackbar(`"${item.name}" is now out of stock. Please remove it from your cart.`, 'warning');
+        }
+      }
+    }
+    if (modified) {
+      setItems(getCart());
+    }
+  }, [liveProducts]);
 
   const [orderVoucher, setOrderVoucher] = useState<{
     orderId: string;
@@ -108,20 +158,32 @@ function CartContent() {
     const requestedProductId = productIdFromQuery.trim();
     if (!requestedProductId) return;
 
-    const matchedProduct = catalogProducts.find((product) => product.id === requestedProductId);
+    const matchedProduct =
+      liveProducts.find((product) => String(product.id) === requestedProductId) ||
+      catalogProducts.find((product) => String(product.id) === requestedProductId);
     if (!matchedProduct) return;
 
+    const maxStock = typeof matchedProduct.inventory === 'number' ? matchedProduct.inventory : undefined;
+
+    if (
+      matchedProduct.availability === 'out_of_stock' ||
+      (maxStock !== undefined && maxStock <= 0)
+    ) {
+      showSnackbar(`"${matchedProduct.name}" is currently out of stock.`, 'warning');
+      return;
+    }
+
     const cartItems = getCart();
-    if (cartItems.some((item) => item.id === requestedProductId)) return;
+    if (cartItems.some((item) => String(item.id) === requestedProductId)) return;
 
     addToCart({
-      id: matchedProduct.id,
+      id: String(matchedProduct.id),
       name: matchedProduct.name,
       price: matchedProduct.price,
       image: matchedProduct.image,
-    });
+    }, maxStock);
     setItems(getCart());
-  }, [productIdFromQuery, catalogProducts]);
+  }, [productIdFromQuery, catalogProducts, liveProducts]);
 
   const subtotal = useMemo(
     () => items.reduce((sum, item) => sum + item.price * item.qty, 0),
@@ -133,23 +195,43 @@ function CartContent() {
     [items]
   );
 
+  const hasOutOfStockItem = useMemo(() => {
+    return items.some((item) => {
+      const max = getProductInventory(item.id);
+      return typeof max === 'number' && max <= 0;
+    });
+  }, [items, liveProducts]);
+
+  const hasExcessItem = useMemo(() => {
+    return items.some((item) => {
+      const max = getProductInventory(item.id);
+      return typeof max === 'number' && item.qty > max;
+    });
+  }, [items, liveProducts]);
+
   const isValid = useMemo(() => {
     return (
       items.length > 0 &&
+      !hasOutOfStockItem &&
+      !hasExcessItem &&
       name.trim().length > 1 &&
       /^[6-9]\d{9}$/.test(phone.trim()) &&
+      /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim()) &&
       addressLine1.trim().length > 3 &&
       city.trim().length > 1 &&
       stateName.trim().length > 1 &&
       /^\d{6}$/.test(pincode.trim())
     );
-  }, [items.length, name, phone, addressLine1, city, stateName, pincode]);
+  }, [items.length, hasOutOfStockItem, hasExcessItem, name, phone, email, addressLine1, city, stateName, pincode]);
 
   /**
    * Razorpay charge in INR. Defaults to cart subtotal. Set NEXT_PUBLIC_RAZORPAY_CHARGE_INR to a
    * number only for test overrides. Amount is clamped to ≥ ₹1 (100 paise) for Indian UPI/QR minimum.
    */
   const razorpayChargeInr = useMemo(() => {
+    const activeKey = process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID?.trim() || '';
+    if (activeKey.startsWith('rzp_live')) return subtotal;
+
     const raw = process.env.NEXT_PUBLIC_RAZORPAY_CHARGE_INR;
     if (raw === undefined || raw === '' || raw === 'subtotal' || raw === 'full') return subtotal;
     const n = Number(raw);
@@ -167,6 +249,9 @@ function CartContent() {
     paymentMode: 'COD' | 'RAZORPAY';
     status: 'PLACED' | 'PAID';
     paymentId?: string | null;
+    razorpayPaymentId?: string;
+    razorpayOrderId?: string;
+    razorpaySignature?: string;
   }) => {
     const response = await fetch(apiUrl('/api/orders'), {
       method: 'POST',
@@ -184,6 +269,9 @@ function CartContent() {
         paymentMode: opts.paymentMode,
         status: opts.status,
         paymentId: opts.paymentId ?? undefined,
+        razorpayPaymentId: opts.razorpayPaymentId,
+        razorpayOrderId: opts.razorpayOrderId,
+        razorpaySignature: opts.razorpaySignature,
         customer: {
           name,
           phone,
@@ -297,32 +385,45 @@ function CartContent() {
       return;
     }
 
-    const key = process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID;
-    if (!key) {
-      setPaymentError('Razorpay key is missing. Add NEXT_PUBLIC_RAZORPAY_KEY_ID in environment.');
-      setIsProcessingPayment(false);
-      return;
-    }
-
     const snapshotItems = [...items];
 
     try {
+      // 1. Create official Razorpay Order on server
+      const initRes = await fetch(apiUrl('/api/razorpay/create-order'), {
+        method: 'POST',
+        credentials: apiFetchCredentials(),
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          items: items.map((i) => ({ id: i.id, qty: i.qty })),
+        }),
+      });
+
+      const initData = await initRes.json();
+      if (!initRes.ok) {
+        throw new Error(initData?.message || 'Failed to initialize payment gateway.');
+      }
+
+      const { orderId: razorpayOrderId, amount: razorpayAmount, keyId } = initData;
+
+      // 2. Open Razorpay Checkout with official order ID
       const checkout = new window.Razorpay({
-        key,
-        amount: razorpayAmountPaise,
+        key: keyId,
+        amount: razorpayAmount,
         currency: 'INR',
         name: 'Swatika Sarees',
-        description:
-          razorpayChargeInr < subtotal
-            ? `Test charge ₹${razorpayBilledInr.toFixed(2)} (order total ₹${subtotal.toFixed(2)})`
-            : 'Order payment',
+        description: 'Order payment',
+        order_id: razorpayOrderId,
         handler: (response) => {
           void (async () => {
             try {
+              // 3. Verify signature and create order on server
               const placed = await createOrderRecord({
                 paymentMode: 'RAZORPAY',
                 status: 'PAID',
                 paymentId: response.razorpay_payment_id,
+                razorpayPaymentId: response.razorpay_payment_id,
+                razorpayOrderId: response.razorpay_order_id,
+                razorpaySignature: response.razorpay_signature,
               });
 
               const addressSummary = [
@@ -384,8 +485,9 @@ function CartContent() {
         },
       });
       checkout.open();
-    } catch {
-      setPaymentError('Unable to open Razorpay checkout.');
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Unable to open Razorpay checkout.';
+      setPaymentError(message);
       setIsProcessingPayment(false);
     }
   };
@@ -587,39 +689,86 @@ function CartContent() {
             <div className="col-lg-8">
               <div className="bg-white rounded-3 shadow-sm p-3 p-md-4">
                 <div className="d-grid gap-3">
-                  {items.map((item) => (
-                    <div key={item.id} className="checkout-item d-flex gap-3 border rounded-3 p-2 p-md-3 align-items-start align-items-sm-center">
-                      <div className="checkout-item-image" style={{ position: 'relative', width: 90, height: 120, flexShrink: 0 }}>
-                        <Image src={item.image} alt={item.name} fill style={{ objectFit: 'cover' }} unoptimized />
-                      </div>
-                      <div className="flex-grow-1 w-100">
-                        <h6 className="mb-1">{item.name}</h6>
-                        <p className="mb-2 text-muted">₹{item.price.toLocaleString('en-IN')}</p>
-                        <div className="d-flex align-items-center gap-2 flex-wrap">
-                          <button
-                            className="btn btn-sm btn-outline-secondary"
-                            onClick={() => updateCartQty(item.id, Math.max(1, item.qty - 1))}
-                          >
-                            -
-                          </button>
-                          <span style={{ minWidth: 22, textAlign: 'center' }}>{item.qty}</span>
-                          <button
-                            className="btn btn-sm btn-outline-secondary"
-                            onClick={() => updateCartQty(item.id, item.qty + 1)}
-                          >
-                            +
-                          </button>
-                          <button
-                            className="btn btn-sm btn-link text-danger text-decoration-none ms-2"
-                            onClick={() => removeFromCart(item.id)}
-                          >
-                            Remove
-                          </button>
+                  {items.map((item) => {
+                    const maxStock = getProductInventory(item.id);
+                    const isMaxReached = typeof maxStock === 'number' && item.qty >= maxStock;
+                    const isOutOfStock = typeof maxStock === 'number' && maxStock <= 0;
+
+                    return (
+                      <div key={item.id} className="checkout-item d-flex gap-3 border rounded-3 p-2 p-md-3 align-items-start align-items-sm-center">
+                        <div className="checkout-item-image" style={{ position: 'relative', width: 90, height: 120, flexShrink: 0 }}>
+                          <Image src={item.image} alt={item.name} fill style={{ objectFit: 'cover' }} unoptimized />
                         </div>
+                        <div className="flex-grow-1 w-100">
+                          <h6 className="mb-1">{item.name}</h6>
+                          <p className="mb-1 text-muted">₹{item.price.toLocaleString('en-IN')}</p>
+
+                          {/* Stock status badges */}
+                          {isOutOfStock ? (
+                            <div className="mb-2">
+                              <span className="badge bg-danger" style={{ fontSize: '0.75rem' }}>
+                                Out of stock — please remove to proceed
+                              </span>
+                            </div>
+                          ) : typeof maxStock === 'number' && maxStock <= 5 ? (
+                            <div className="mb-2">
+                              <span className="badge bg-warning-subtle text-warning-emphasis border border-warning" style={{ fontSize: '0.75rem' }}>
+                                Only {maxStock} piece{maxStock > 1 ? 's' : ''} left in stock
+                              </span>
+                            </div>
+                          ) : null}
+
+                          <div className="d-flex align-items-center gap-2 flex-wrap">
+                            <button
+                              type="button"
+                              className="btn btn-sm btn-outline-secondary"
+                              onClick={() => {
+                                const newQty = Math.max(1, item.qty - 1);
+                                updateCartQty(item.id, newQty, maxStock);
+                                setItems(getCart());
+                              }}
+                              disabled={item.qty <= 1}
+                              aria-label="Decrease quantity"
+                            >
+                              -
+                            </button>
+                            <span style={{ minWidth: 22, textAlign: 'center', fontWeight: '600' }}>{item.qty}</span>
+                            <button
+                              type="button"
+                              className="btn btn-sm btn-outline-secondary"
+                              onClick={() => {
+                                if (typeof maxStock === 'number' && item.qty >= maxStock) {
+                                  showSnackbar(`Only ${maxStock} piece(s) available for "${item.name}".`, 'warning');
+                                  return;
+                                }
+                                updateCartQty(item.id, item.qty + 1, maxStock);
+                                setItems(getCart());
+                              }}
+                              disabled={isMaxReached}
+                              aria-label="Increase quantity"
+                              title={isMaxReached ? `Only ${maxStock} available` : 'Add one more'}
+                            >
+                              +
+                            </button>
+                            <button
+                              type="button"
+                              className="btn btn-sm btn-link text-danger text-decoration-none ms-2"
+                              onClick={() => {
+                                removeFromCart(item.id);
+                                setItems(getCart());
+                              }}
+                            >
+                              Remove
+                            </button>
+                          </div>
+                          {isMaxReached && !isOutOfStock && (
+                            <small className="text-muted d-block mt-1">Maximum available quantity reached ({maxStock}).</small>
+                          )}
+                        </div>
+                        <div className="fw-bold checkout-item-total">₹{(item.price * item.qty).toLocaleString('en-IN')}</div>
                       </div>
-                      <div className="fw-bold checkout-item-total">₹{(item.price * item.qty).toLocaleString('en-IN')}</div>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
               </div>
 
@@ -650,12 +799,14 @@ function CartContent() {
                   </div>
 
                   <div>
-                    <label className="form-label fw-semibold">Email</label>
+                    <label className="form-label fw-semibold">Email *</label>
                     <input
                       type="email"
                       className="form-control"
                       value={email}
                       onChange={(event) => setEmail(event.target.value)}
+                      placeholder="name@example.com"
+                      required
                     />
                   </div>
 
@@ -805,6 +956,16 @@ function CartContent() {
                 {paymentError && (
                   <div className="alert alert-danger py-2 px-3 mb-3" role="alert">
                     {paymentError}
+                  </div>
+                )}
+                {hasOutOfStockItem && (
+                  <div className="alert alert-danger py-2 px-3 mb-3 small" role="alert">
+                    Your cart contains out-of-stock items. Please remove them to proceed.
+                  </div>
+                )}
+                {hasExcessItem && !hasOutOfStockItem && (
+                  <div className="alert alert-warning py-2 px-3 mb-3 small" role="alert">
+                    Some item quantities exceed available stock. Please reduce them to proceed.
                   </div>
                 )}
                 {paymentMethod === 'cod' ? (

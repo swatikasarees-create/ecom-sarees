@@ -34,14 +34,6 @@ type SingleOrder = {
   items: TrackItem[];
 };
 
-type ListRow = {
-  orderId: string;
-  customerName: string;
-  amount: number;
-  status: string;
-  createdAt: string;
-  itemCount: number;
-};
 
 function statusBadgeClass(status: string) {
   switch (status) {
@@ -63,12 +55,12 @@ function statusBadgeClass(status: string) {
 function TrackOrderInner() {
   const searchParams = useSearchParams();
   const [orderId, setOrderId] = useState('');
+  const [verifyMethod, setVerifyMethod] = useState<'phone' | 'email'>('phone');
+  const [phone, setPhone] = useState('');
   const [email, setEmail] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [single, setSingle] = useState<SingleOrder | null>(null);
-  const [list, setList] = useState<ListRow[] | null>(null);
-  const [listMessage, setListMessage] = useState('');
 
   useEffect(() => {
     const oid = searchParams.get('orderId')?.trim();
@@ -79,23 +71,36 @@ function TrackOrderInner() {
     e.preventDefault();
     setError('');
     setSingle(null);
-    setList(null);
-    setListMessage('');
 
     const oid = orderId.trim();
-    const em = email.trim().toLowerCase();
 
-    if (!oid && !em) {
-      setError('Enter your order ID and/or the email used at checkout.');
+    if (!oid) {
+      setError('Please enter your Order ID.');
       return;
+    }
+
+    const params = new URLSearchParams();
+    params.set('orderId', oid);
+
+    if (verifyMethod === 'phone') {
+      const ph = phone.replace(/\D/g, '').slice(-10);
+      if (ph.length !== 10) {
+        setError('Please enter the 10-digit mobile number used when placing the order.');
+        return;
+      }
+      params.set('phone', ph);
+    } else {
+      const em = email.trim().toLowerCase();
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!emailRegex.test(em)) {
+        setError('Please enter the email address used when placing the order.');
+        return;
+      }
+      params.set('email', em);
     }
 
     setLoading(true);
     try {
-      const params = new URLSearchParams();
-      if (oid) params.set('orderId', oid);
-      if (em) params.set('email', em);
-
       const res = await fetch(apiUrl(`/api/orders/track?${params.toString()}`), {
         cache: 'no-store',
         credentials: apiFetchCredentials(),
@@ -103,18 +108,12 @@ function TrackOrderInner() {
       const data = await res.json();
 
       if (!res.ok) {
-        setError(typeof data?.message === 'string' ? data.message : 'Something went wrong.');
+        setError(typeof data?.message === 'string' ? data.message : 'Unable to find matching order.');
         return;
       }
 
       if (data.kind === 'single' && data.order) {
         setSingle(data.order as SingleOrder);
-        return;
-      }
-
-      if (data.kind === 'list') {
-        setList((data.orders ?? []) as ListRow[]);
-        if (typeof data.message === 'string') setListMessage(data.message);
         return;
       }
 
@@ -131,8 +130,7 @@ function TrackOrderInner() {
       <div style={{ maxWidth: 720, margin: '0 auto' }}>
         <h1 style={{ fontSize: 'clamp(1.45rem, 3vw, 2rem)', marginBottom: 8 }}>Track your order</h1>
         <p className="text-muted mb-4" style={{ maxWidth: 520 }}>
-          Enter the order ID from your confirmation, and/or the email you used at checkout. No account login is
-          required.
+          Enter the Order ID from your confirmation receipt along with your contact number or email ID to view shipment status.
         </p>
 
         <form
@@ -140,32 +138,77 @@ function TrackOrderInner() {
           className="bg-white rounded-3 shadow-sm p-3 p-md-4 mb-4"
           style={{ border: '1px solid #eee' }}
         >
-          <div className="row g-3">
-            <div className="col-md-6">
-              <label className="form-label fw-semibold">Order ID</label>
-              <input
-                className="form-control"
-                value={orderId}
-                onChange={(ev) => setOrderId(ev.target.value)}
-                placeholder="e.g. SWA-20260405-ABC123"
-                autoComplete="off"
-              />
-            </div>
-            <div className="col-md-6">
-              <label className="form-label fw-semibold">Email</label>
-              <input
-                type="email"
-                className="form-control"
-                value={email}
-                onChange={(ev) => setEmail(ev.target.value)}
-                placeholder="Email used when placing the order"
-                autoComplete="email"
-              />
+          <div className="mb-3">
+            <label className="form-label fw-semibold">Order ID *</label>
+            <input
+              className="form-control"
+              value={orderId}
+              onChange={(ev) => setOrderId(ev.target.value)}
+              placeholder="e.g. SWA-20261003-ABC123"
+              autoComplete="off"
+              required
+            />
+          </div>
+
+          <div className="mb-3">
+            <label className="form-label fw-semibold d-block">Verification Method *</label>
+            <div className="btn-group w-100" role="group">
+              <button
+                type="button"
+                className={`btn btn-sm ${verifyMethod === 'phone' ? 'btn-dark' : 'btn-outline-secondary'}`}
+                onClick={() => {
+                  setVerifyMethod('phone');
+                  setError('');
+                }}
+              >
+                Verify by Contact Number
+              </button>
+              <button
+                type="button"
+                className={`btn btn-sm ${verifyMethod === 'email' ? 'btn-dark' : 'btn-outline-secondary'}`}
+                onClick={() => {
+                  setVerifyMethod('email');
+                  setError('');
+                }}
+              >
+                Verify by Email ID
+              </button>
             </div>
           </div>
+
+          <div className="mb-3">
+            {verifyMethod === 'phone' ? (
+              <div>
+                <label className="form-label fw-semibold">10-Digit Mobile Number *</label>
+                <input
+                  type="tel"
+                  className="form-control"
+                  value={phone}
+                  onChange={(ev) => setPhone(ev.target.value.replace(/\D/g, '').slice(0, 10))}
+                  placeholder="e.g. 9876543210"
+                  inputMode="numeric"
+                  autoComplete="tel"
+                  required
+                />
+              </div>
+            ) : (
+              <div>
+                <label className="form-label fw-semibold">Email Address *</label>
+                <input
+                  type="email"
+                  className="form-control"
+                  value={email}
+                  onChange={(ev) => setEmail(ev.target.value)}
+                  placeholder="e.g. customer@example.com"
+                  autoComplete="email"
+                  required
+                />
+              </div>
+            )}
+          </div>
+
           <p className="small text-muted mt-2 mb-3">
-            Use <strong>order ID only</strong> for a quick lookup, <strong>email only</strong> to see all orders on
-            that address, or <strong>both</strong> together to verify the order belongs to you.
+            For security and privacy, your Order ID and matching contact number or email address are required to view order details.
           </p>
           <button
             type="submit"
@@ -274,42 +317,6 @@ function TrackOrderInner() {
                 Continue shopping
               </Link>
             </div>
-          </div>
-        )}
-
-        {list && (
-          <div className="bg-white rounded-3 shadow-sm p-3 p-md-4">
-            <h2 className="h5 mb-3">Orders for this email</h2>
-            {listMessage && <p className="text-muted small mb-3">{listMessage}</p>}
-            {list.length === 0 ? (
-              <p className="text-muted mb-0">No orders found.</p>
-            ) : (
-              <ul className="list-group list-group-flush">
-                {list.map((row) => (
-                  <li key={row.orderId} className="list-group-item px-0 d-flex flex-wrap justify-content-between gap-2 align-items-center">
-                    <div>
-                      <div className="fw-semibold" style={{ fontFamily: 'ui-monospace, monospace' }}>
-                        {row.orderId}
-                      </div>
-                      <div className="small text-muted">
-                        {new Date(row.createdAt).toLocaleString('en-IN', { dateStyle: 'medium', timeStyle: 'short' })}{' '}
-                        · {row.itemCount} item{row.itemCount === 1 ? '' : 's'}
-                      </div>
-                    </div>
-                    <div className="text-end">
-                      <div className="fw-bold">₹{row.amount.toLocaleString('en-IN')}</div>
-                      <span className={`badge ${statusBadgeClass(row.status)}`}>{row.status}</span>
-                    </div>
-                  </li>
-                ))}
-              </ul>
-            )}
-            {list.length > 0 && (
-              <p className="small text-muted mt-3 mb-0">
-                To see line items and full address, search again using that <strong>order ID</strong> alone (or order
-                ID + email together).
-              </p>
-            )}
           </div>
         )}
       </div>

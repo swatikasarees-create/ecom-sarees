@@ -3,9 +3,12 @@
 import { useState, useEffect, useMemo, useRef } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
-import { useSearchParams } from 'next/navigation';
+import { useSearchParams, useRouter } from 'next/navigation';
 import { getCatalogProducts, Product } from '../lib/productData';
-import { addToCart } from '../lib/commerceStore';
+import { addToCart, getCartItemQty, getCartEventName } from '../lib/commerceStore';
+import { getWishlist, getWishlistEventName, toggleWishlist } from '../lib/wishlistStore';
+import { showSnackbar } from '../lib/snackbar';
+import { apiUrl } from '../lib/apiBase';
 
 type CatalogSection = 'sarees' | 'suit';
 
@@ -33,12 +36,32 @@ export default function SareesContent({ section = 'sarees', typeQuery }: SareesC
   const typeParam = typeQuery ?? null;
   const isSuitSection = section === 'suit';
 
+  const initialCatalog = useMemo(() => getCatalogProducts(showTestCatalog), [showTestCatalog]);
+  const [catalog, setCatalog] = useState<Product[]>(initialCatalog);
+
+  useEffect(() => {
+    let active = true;
+    const testQuery = showTestCatalog ? '?test=1' : '';
+    fetch(apiUrl(`/api/products${testQuery}`))
+      .then((res) => (res.ok ? res.json() : null))
+      .then((data) => {
+        if (active && data?.products && Array.isArray(data.products) && data.products.length > 0) {
+          setCatalog(data.products);
+        }
+      })
+      .catch(() => {});
+    return () => {
+      active = false;
+    };
+  }, [showTestCatalog]);
+
+  const isSuitCategory = (c: string) => /suit|kurta/i.test(c);
+
   const sectionProducts = useMemo(() => {
-    const catalog = getCatalogProducts(showTestCatalog);
     return isSuitSection
-      ? catalog.filter((product) => product.category === 'Suit')
-      : catalog.filter((product) => product.category !== 'Suit');
-  }, [isSuitSection, showTestCatalog]);
+      ? catalog.filter((product) => isSuitCategory(product.category))
+      : catalog.filter((product) => !isSuitCategory(product.category));
+  }, [isSuitSection, catalog]);
 
   const categoryOptions = useMemo(
     () => [...new Set(sectionProducts.map((product) => product.category))].sort(),
@@ -75,8 +98,50 @@ export default function SareesContent({ section = 'sarees', typeQuery }: SareesC
     startPanY: number;
   } | null>(null);
 
+  const router = useRouter();
+  const [wishlistIds, setWishlistIds] = useState<Set<string>>(new Set());
+
+  useEffect(() => {
+    const syncWishlist = () => {
+      setWishlistIds(new Set(getWishlist().map((w) => w.id)));
+    };
+    syncWishlist();
+    const eventName = getWishlistEventName();
+    window.addEventListener(eventName, syncWishlist);
+    return () => window.removeEventListener(eventName, syncWishlist);
+  }, []);
+
+  const [cartVersion, setCartVersion] = useState(0);
+  useEffect(() => {
+    const handleCart = () => setCartVersion((v) => v + 1);
+    const ev = getCartEventName();
+    window.addEventListener(ev, handleCart);
+    return () => window.removeEventListener(ev, handleCart);
+  }, []);
+
+  const handleToggleWishlist = (product: Product) => {
+    toggleWishlist({
+      id: product.id,
+      name: product.name,
+      price: product.price,
+      image: product.image,
+    });
+  };
+
   const filteredProducts = useMemo(() => {
     let filtered = [...sectionProducts];
+
+    const searchQuery = searchParams.get('q')?.trim().toLowerCase();
+    if (searchQuery) {
+      filtered = filtered.filter(
+        (product) =>
+          product.name.toLowerCase().includes(searchQuery) ||
+          product.category.toLowerCase().includes(searchQuery) ||
+          product.fabric.toLowerCase().includes(searchQuery) ||
+          product.color.toLowerCase().includes(searchQuery) ||
+          product.description?.toLowerCase().includes(searchQuery)
+      );
+    }
 
     if (selectedCategories.length > 0) {
       filtered = filtered.filter((product) => selectedCategories.includes(product.category));
@@ -106,7 +171,7 @@ export default function SareesContent({ section = 'sarees', typeQuery }: SareesC
     }
 
     return filtered;
-  }, [priceRange, sectionProducts, selectedCategories, selectedFabrics, sortBy]);
+  }, [priceRange, searchParams, sectionProducts, selectedCategories, selectedFabrics, sortBy]);
 
   const openProductModal = (product: Product) => {
     setZoomLevel(1);
@@ -149,13 +214,38 @@ export default function SareesContent({ section = 'sarees', typeQuery }: SareesC
     setPriceRange([0, 15000]);
   };
 
+  const isOutOfStock = (product: Product) => {
+    return (
+      product.availability === 'out_of_stock' ||
+      (product.inventory !== undefined && product.inventory <= 0)
+    );
+  };
+
   const handleAddToCart = (product: Product) => {
-    addToCart({
+    if (isOutOfStock(product)) {
+      showSnackbar(`"${product.name}" is currently out of stock.`, 'warning');
+      return;
+    }
+    const maxStock = typeof product.inventory === 'number' ? product.inventory : 10;
+    const res = addToCart({
       id: String(product.id),
       name: product.name,
       price: product.price,
       image: product.image,
-    });
+    }, maxStock);
+
+    if (!res.success) {
+      if (res.reason === 'out_of_stock') {
+        showSnackbar(`"${product.name}" is currently out of stock.`, 'warning');
+      } else if (res.reason === 'max_reached') {
+        showSnackbar(
+          `Only ${res.maxStock} piece${(res.maxStock ?? 1) > 1 ? 's' : ''} available for "${product.name}". You already have ${res.currentQty} in your cart.`,
+          'warning'
+        );
+      }
+      return;
+    }
+    showSnackbar(`Added "${product.name}" to cart!`, 'success');
   };
 
   const shopNowHref = (product: Product) =>
@@ -330,6 +420,20 @@ export default function SareesContent({ section = 'sarees', typeQuery }: SareesC
             </div>
           </div>
 
+          {searchParams.get('q') && (
+            <div className="alert alert-secondary d-flex justify-content-between align-items-center mb-4 px-3 py-2">
+              <div>
+                Showing results for: <strong>&quot;{searchParams.get('q')}&quot;</strong>
+              </div>
+              <button
+                className="btn btn-sm btn-outline-dark"
+                onClick={() => router.push(isSuitSection ? '/suit' : '/sarees')}
+              >
+                Clear Search
+              </button>
+            </div>
+          )}
+
           <p className="text-muted mb-3 mb-md-4 px-2 px-md-0" style={{ fontSize: 'clamp(0.85rem, 2vw, 1rem)' }}>
             {filteredProducts.length} products
           </p>
@@ -352,12 +456,57 @@ export default function SareesContent({ section = 'sarees', typeQuery }: SareesC
                     style={{ cursor: 'pointer' }}
                   >
                     <div className="position-relative overflow-hidden" style={{ aspectRatio: '3/4' }}>
-                      <Image src={product.image} alt={product.name} fill style={{ objectFit: 'cover', objectPosition: 'center top' }} className="product-image" unoptimized />
-                      {product.originalPrice && (
+                      <Image
+                        src={product.image}
+                        alt={product.name}
+                        fill
+                        style={{
+                          objectFit: 'cover',
+                          objectPosition: 'center top',
+                          filter: isOutOfStock(product) ? 'grayscale(35%) contrast(0.95)' : 'none',
+                        }}
+                        className="product-image"
+                        unoptimized
+                      />
+                      {isOutOfStock(product) ? (
+                        <span
+                          className="badge position-absolute top-0 start-0 m-2 px-2 py-1 shadow-sm"
+                          style={{
+                            backgroundColor: '#1c1b1f',
+                            color: '#fff',
+                            fontSize: '0.72rem',
+                            letterSpacing: '0.6px',
+                            fontWeight: 700,
+                            textTransform: 'uppercase',
+                            borderRadius: '4px',
+                            zIndex: 2,
+                          }}
+                        >
+                          Out of Stock
+                        </span>
+                      ) : product.originalPrice ? (
                         <span className="badge bg-danger position-absolute top-0 start-0 m-2">
                           Save {Math.round(((product.originalPrice - product.price) / product.originalPrice) * 100)}%
                         </span>
-                      )}
+                      ) : null}
+                      <button
+                        type="button"
+                        className={`btn btn-sm position-absolute top-0 end-0 m-2 rounded-circle d-flex align-items-center justify-content-center shadow-sm ${
+                          wishlistIds.has(String(product.id)) ? 'btn-danger text-white' : 'btn-light text-muted'
+                        }`}
+                        style={{ width: '34px', height: '34px', zIndex: 3, padding: 0 }}
+                        onClick={(event) => {
+                          event.preventDefault();
+                          event.stopPropagation();
+                          handleToggleWishlist(product);
+                        }}
+                        aria-label={wishlistIds.has(String(product.id)) ? 'Remove from Wishlist' : 'Add to Wishlist'}
+                        title={wishlistIds.has(String(product.id)) ? 'Remove from Wishlist' : 'Add to Wishlist'}
+                      >
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill={wishlistIds.has(String(product.id)) ? 'currentColor' : 'none'} stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                          <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path>
+                        </svg>
+                      </button>
                     </div>
                     <div className="card-body p-2 p-md-3">
                       <h6 className="card-title text-dark mb-2" style={{ fontSize: 'clamp(0.75rem, 2vw, 0.9rem)' }}>{product.name}</h6>
@@ -373,16 +522,40 @@ export default function SareesContent({ section = 'sarees', typeQuery }: SareesC
                         )}
                       </div>
                       <div className="d-flex gap-2 mt-3">
-                        <button type="button" className="btn btn-sm btn-dark flex-fill" onClick={(event) => { event.preventDefault(); event.stopPropagation(); handleAddToCart(product); }}>
-                          Add to Cart
-                        </button>
-                        <Link
-                          href={shopNowHref(product)}
-                          className="btn btn-sm btn-outline-dark flex-fill"
-                          onClick={(event) => event.stopPropagation()}
+                        <button
+                          type="button"
+                          className={`btn btn-sm flex-fill ${
+                            isOutOfStock(product) ? 'btn-outline-danger' : 'btn-dark'
+                          }`}
+                          onClick={(event) => {
+                            event.preventDefault();
+                            event.stopPropagation();
+                            handleAddToCart(product);
+                          }}
                         >
-                          Shop now
-                        </Link>
+                          {isOutOfStock(product) ? 'Out of Stock' : 'Add to Cart'}
+                        </button>
+                        {isOutOfStock(product) ? (
+                          <button
+                            type="button"
+                            className="btn btn-sm btn-outline-secondary flex-fill text-muted"
+                            onClick={(event) => {
+                              event.preventDefault();
+                              event.stopPropagation();
+                              showSnackbar(`"${product.name}" is currently out of stock.`, 'warning');
+                            }}
+                          >
+                            Unavailable
+                          </button>
+                        ) : (
+                          <Link
+                            href={shopNowHref(product)}
+                            className="btn btn-sm btn-outline-dark flex-fill"
+                            onClick={(event) => event.stopPropagation()}
+                          >
+                            Shop now
+                          </Link>
+                        )}
                       </div>
                     </div>
                   </div>
@@ -523,6 +696,19 @@ export default function SareesContent({ section = 'sarees', typeQuery }: SareesC
                     <h4 className="mb-2">{selectedProduct.name}</h4>
                     <button type="button" className="btn-close" onClick={closeProductModal} aria-label="Close" />
                   </div>
+                  {isOutOfStock(selectedProduct) ? (
+                    <div className="mb-2">
+                      <span className="badge bg-dark text-uppercase px-2 py-1" style={{ letterSpacing: '0.5px' }}>
+                        Out of Stock
+                      </span>
+                    </div>
+                  ) : typeof selectedProduct.inventory === 'number' && selectedProduct.inventory <= 5 ? (
+                    <div className="mb-2">
+                      <span className="badge bg-danger-subtle text-danger border border-danger-subtle px-2 py-1" style={{ letterSpacing: '0.5px' }}>
+                        Only {selectedProduct.inventory} piece{selectedProduct.inventory > 1 ? 's' : ''} left in stock!
+                      </span>
+                    </div>
+                  ) : null}
                   <p className="text-muted mb-2">
                     {selectedProduct.category} • {selectedProduct.fabric}
                   </p>
@@ -536,12 +722,55 @@ export default function SareesContent({ section = 'sarees', typeQuery }: SareesC
                   </div>
                   <p className="text-muted mb-4">{selectedProduct.description || 'No description available.'}</p>
                   <div className="d-flex flex-wrap gap-2">
-                    <button type="button" className="btn btn-dark" onClick={() => handleAddToCart(selectedProduct)}>
-                      Add to Cart
+                    {(() => {
+                      const modalCartQty = getCartItemQty(String(selectedProduct.id));
+                      const modalMaxStock = typeof selectedProduct.inventory === 'number' ? selectedProduct.inventory : 10;
+                      const isModalMax = !isOutOfStock(selectedProduct) && modalCartQty >= modalMaxStock;
+                      return (
+                        <button
+                          type="button"
+                          className={`btn ${isOutOfStock(selectedProduct) ? 'btn-outline-danger' : isModalMax ? 'btn-secondary' : 'btn-dark'}`}
+                          onClick={() => {
+                            if (isOutOfStock(selectedProduct)) {
+                              showSnackbar(`"${selectedProduct.name}" is currently out of stock.`, 'warning');
+                              return;
+                            }
+                            if (isModalMax) {
+                              showSnackbar(
+                                `Only ${modalMaxStock} piece(s) available for "${selectedProduct.name}". You already have ${modalCartQty} in your cart.`,
+                                'warning'
+                              );
+                              return;
+                            }
+                            handleAddToCart(selectedProduct);
+                          }}
+                        >
+                          {isOutOfStock(selectedProduct) ? 'Out of Stock' : isModalMax ? `Max in Cart (${modalCartQty})` : 'Add to Cart'}
+                        </button>
+                      );
+                    })()}
+                    {isOutOfStock(selectedProduct) ? (
+                      <button
+                        type="button"
+                        className="btn btn-outline-secondary text-muted"
+                        onClick={() => showSnackbar(`"${selectedProduct.name}" is currently out of stock.`, 'warning')}
+                      >
+                        Unavailable
+                      </button>
+                    ) : (
+                      <Link href={shopNowHref(selectedProduct)} className="btn btn-outline-dark">
+                        Shop now
+                      </Link>
+                    )}
+                    <button
+                      type="button"
+                      className={`btn ${
+                        wishlistIds.has(String(selectedProduct.id)) ? 'btn-danger' : 'btn-outline-danger'
+                      }`}
+                      onClick={() => handleToggleWishlist(selectedProduct)}
+                    >
+                      {wishlistIds.has(String(selectedProduct.id)) ? '♥ Saved in Wishlist' : '♡ Add to Wishlist'}
                     </button>
-                    <Link href={shopNowHref(selectedProduct)} className="btn btn-outline-dark">
-                      Shop now
-                    </Link>
                   </div>
                 </div>
               </div>

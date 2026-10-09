@@ -10,6 +10,7 @@ export interface Product {
   fabric: string;
   color: string;
   availability: 'in_stock' | 'out_of_stock';
+  inventory?: number;
   collection?: string;
   description?: string;
 }
@@ -668,9 +669,10 @@ export const testCatalogProduct: Product = {
     'Internal test listing at ₹1. Shown only when the site URL includes the query parameter `test` (e.g. `/?test` or `/sarees?test`).',
 };
 
-/** Full catalog including the ₹1 test product when `includeTest` is true (URL `?test`). */
+/** Full catalog including the ₹1 test product when `includeTest` is true (URL `?test`). Never exposed when using live Razorpay keys. */
 export function getCatalogProducts(includeTest: boolean): Product[] {
-  if (!includeTest) return products;
+  const isLive = process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID?.startsWith('rzp_live');
+  if (!includeTest || isLive) return products;
   return [...products, testCatalogProduct];
 }
 

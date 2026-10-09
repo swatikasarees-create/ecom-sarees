@@ -1,4 +1,4 @@
-import mysql, { Pool } from 'mysql2/promise';
+import mysql, { type Pool } from 'mysql2/promise';
 
 let pool: Pool | null = null;
 let tableReadyPromise: Promise<void> | null = null;
@@ -15,11 +15,11 @@ const required = (name: string) => {
 export const getDbPool = () => {
   if (!pool) {
     pool = mysql.createPool({
-      host: required('MYSQL_HOST'),
+      host: required('MYSQL_HOST').trim(),
       port: Number(process.env.MYSQL_PORT ?? 3306),
-      user: required('MYSQL_USER'),
+      user: required('MYSQL_USER').trim(),
       password: required('MYSQL_PASSWORD'),
-      database: required('MYSQL_DATABASE'),
+      database: required('MYSQL_DATABASE').trim(),
       waitForConnections: true,
       connectionLimit: 10,
       queueLimit: 0,
@@ -38,13 +38,31 @@ export const ensureProductsTable = async () => {
           name VARCHAR(255) NOT NULL,
           description TEXT NOT NULL,
           category VARCHAR(120) NOT NULL,
+          fabric VARCHAR(100) NULL,
+          color VARCHAR(100) NULL,
+          collection VARCHAR(100) NULL,
           inventory INT NOT NULL DEFAULT 0,
           price DECIMAL(10,2) NOT NULL,
+          original_price DECIMAL(10,2) NULL,
           image_url TEXT NULL,
           created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
           updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
         )
       `);
+      // Ensure extra columns exist on legacy tables
+      const columnsToAdd = [
+        { name: 'fabric', type: 'VARCHAR(100) NULL' },
+        { name: 'color', type: 'VARCHAR(100) NULL' },
+        { name: 'collection', type: 'VARCHAR(100) NULL' },
+        { name: 'original_price', type: 'DECIMAL(10,2) NULL' },
+      ];
+      for (const col of columnsToAdd) {
+        try {
+          await db.query(`ALTER TABLE products ADD COLUMN ${col.name} ${col.type}`);
+        } catch {
+          // column already exists, ignore error
+        }
+      }
     })();
   }
   await tableReadyPromise;

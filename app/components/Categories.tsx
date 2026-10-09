@@ -1,11 +1,16 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { getProductImageByHash } from '../lib/productImage';
 import { addToCart } from '../lib/commerceStore';
+import { getWishlist, toggleWishlist, getWishlistEventName } from '../lib/wishlistStore';
+import { showSnackbar } from '../lib/snackbar';
+import { getCatalogProducts, type Product as FullProduct } from '../lib/productData';
+import { apiUrl } from '../lib/apiBase';
+import ProductModal from './ProductModal';
 
 interface Product {
   id: number;
@@ -20,6 +25,84 @@ const instaImg = (hash: string) => getProductImageByHash(hash);
 export default function Categories() {
   const router = useRouter();
   const [activeTab, setActiveTab] = useState<'bestSellers' | 'newArrivals'>('bestSellers');
+  const [stockMap, setStockMap] = useState<Record<string, { inventory: number; availability: string }>>({});
+  const [allProducts, setAllProducts] = useState<FullProduct[]>(() => getCatalogProducts(true));
+  const [selectedProduct, setSelectedProduct] = useState<FullProduct | null>(null);
+  const [wishlistIds, setWishlistIds] = useState<Set<string>>(new Set());
+
+  useEffect(() => {
+    let active = true;
+    fetch(apiUrl('/api/products'))
+      .then((res) => (res.ok ? res.json() : null))
+      .then((data) => {
+        if (active && Array.isArray(data?.products)) {
+          setAllProducts(data.products);
+          const map: Record<string, { availability: string; inventory: number }> = {};
+          for (const p of data.products) {
+            map[String(p.id)] = {
+              availability: p.availability,
+              inventory: p.inventory ?? 0,
+            };
+          }
+          setStockMap(map);
+        }
+      })
+      .catch(() => {});
+    return () => {
+      active = false;
+    };
+  }, []);
+
+  useEffect(() => {
+    const syncWishlist = () => {
+      setWishlistIds(new Set(getWishlist().map((w) => String(w.id))));
+    };
+    syncWishlist();
+    const eventName = getWishlistEventName();
+    window.addEventListener(eventName, syncWishlist);
+    return () => window.removeEventListener(eventName, syncWishlist);
+  }, []);
+
+  const isOutOfStock = (product: Product) => {
+    const stock = stockMap[String(product.id)];
+    if (stock) {
+      return stock.inventory <= 0 || stock.availability === 'out_of_stock';
+    }
+    const cat = allProducts.find((p) => String(p.id) === String(product.id));
+    if (cat) {
+      return cat.availability === 'out_of_stock' || (cat.inventory !== undefined && cat.inventory <= 0);
+    }
+    return false;
+  };
+
+  const openProductModal = (product: Product) => {
+    const full = allProducts.find((p) => String(p.id) === String(product.id));
+    if (full) {
+      const stock = stockMap[String(product.id)];
+      const inv = stock ? stock.inventory : full.inventory;
+      const avail = stock ? stock.availability : full.availability;
+      setSelectedProduct({
+        ...full,
+        inventory: inv,
+        availability: (avail === 'out_of_stock' || (inv !== undefined && inv <= 0)) ? 'out_of_stock' : 'in_stock',
+      });
+    } else {
+      setSelectedProduct({
+        id: String(product.id),
+        name: product.name,
+        price: product.price,
+        originalPrice: product.originalPrice,
+        image: product.image,
+        category: 'Sarees',
+        fabric: 'Silk',
+        color: 'Multi',
+        availability: isOutOfStock(product) ? 'out_of_stock' : 'in_stock',
+        inventory: stockMap[String(product.id)]?.inventory ?? 10,
+        description: product.name,
+      });
+    }
+  };
+
   const getCheckoutHref = (product: Product) =>
     `/checkout?productId=${product.id}&product=${encodeURIComponent(product.name)}`;
 
@@ -73,13 +156,39 @@ export default function Categories() {
 
   const displayProducts = activeTab === 'bestSellers' ? bestSellers : newArrivals;
 
+  const getProductStock = (productId: string | number): number => {
+    const stock = stockMap[String(productId)];
+    if (stock && typeof stock.inventory === 'number') {
+      return stock.inventory;
+    }
+    const cat = allProducts.find((p) => String(p.id) === String(productId));
+    if (cat && typeof cat.inventory === 'number') {
+      return cat.inventory;
+    }
+    return 10;
+  };
+
   const addProductToCart = (product: Product) => {
-    addToCart({
+    const maxStock = getProductStock(product.id);
+    const res = addToCart({
       id: String(product.id),
       name: product.name,
       image: product.image,
       price: product.price,
-    });
+    }, maxStock);
+
+    if (!res.success) {
+      if (res.reason === 'out_of_stock') {
+        showSnackbar(`"${product.name}" is currently out of stock.`, 'warning');
+      } else if (res.reason === 'max_reached') {
+        showSnackbar(
+          `Only ${res.maxStock} piece${(res.maxStock ?? 1) > 1 ? 's' : ''} available for "${product.name}". You already have ${res.currentQty} in your cart.`,
+          'warning'
+        );
+      }
+      return;
+    }
+    showSnackbar(`Added "${product.name}" to cart!`, 'success');
   };
 
   return (
@@ -169,142 +278,176 @@ export default function Categories() {
         <div className="row g-3 g-md-4" data-aos="fade-up" data-aos-delay="400">
           {displayProducts.map((product, index) => (
             <div key={product.id} className="col-12 col-md-6 col-lg-4" data-aos="fade-up" data-aos-delay={index * 100}>
-              <Link href={getCheckoutHref(product)} className="text-decoration-none">
+              <div
+                role="button"
+                tabIndex={0}
+                className="product-card"
+                onClick={() => openProductModal(product)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault();
+                    openProductModal(product);
+                  }
+                }}
+                style={{
+                  background: 'white',
+                  borderRadius: '12px',
+                  overflow: 'hidden',
+                  boxShadow: '0 4px 15px rgba(0,0,0,0.08)',
+                  transition: 'all 0.3s ease',
+                  height: '100%',
+                  cursor: 'pointer',
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.transform = 'translateY(-8px)';
+                  e.currentTarget.style.boxShadow = '0 12px 30px rgba(0,0,0,0.15)';
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.transform = 'translateY(0)';
+                  e.currentTarget.style.boxShadow = '0 4px 15px rgba(0,0,0,0.08)';
+                }}
+              >
+                {/* Product Image */}
                 <div
-                  className="product-card"
                   style={{
-                    background: 'white',
-                    borderRadius: '12px',
+                    position: 'relative',
+                    width: '100%',
+                    height: 'clamp(300px, 50vw, 450px)',
                     overflow: 'hidden',
-                    boxShadow: '0 4px 15px rgba(0,0,0,0.08)',
-                    transition: 'all 0.3s ease',
-                    height: '100%'
-                  }}
-                  onMouseEnter={(e) => {
-                    e.currentTarget.style.transform = 'translateY(-8px)';
-                    e.currentTarget.style.boxShadow = '0 12px 30px rgba(0,0,0,0.15)';
-                  }}
-                  onMouseLeave={(e) => {
-                    e.currentTarget.style.transform = 'translateY(0)';
-                    e.currentTarget.style.boxShadow = '0 4px 15px rgba(0,0,0,0.08)';
+                    background: '#f5f0ed'
                   }}
                 >
-                  {/* Product Image */}
-                  <div
+                  <Image
+                    src={product.image}
+                    alt={product.name}
+                    fill
                     style={{
-                      position: 'relative',
-                      width: '100%',
-                      height: 'clamp(300px, 50vw, 450px)',
+                      objectFit: 'cover',
+                      objectPosition: 'center top',
+                      transition: 'transform 0.5s ease',
+                      filter: isOutOfStock(product) ? 'grayscale(35%) opacity(0.85)' : 'none',
+                    }}
+                    sizes="(max-width: 768px) 100vw, (max-width: 1024px) 50vw, 33vw"
+                    unoptimized
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.transform = 'scale(1.05)';
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.transform = 'scale(1)';
+                    }}
+                  />
+                  {isOutOfStock(product) && (
+                    <span className="badge position-absolute" style={{
+                      top: '15px',
+                      left: '15px',
+                      backgroundColor: '#1c1b1f',
+                      color: 'white',
+                      padding: '6px 14px',
+                      fontSize: '11px',
+                      fontWeight: '700',
+                      letterSpacing: '1px',
+                      borderRadius: '20px',
+                      zIndex: 3,
+                      boxShadow: '0 4px 12px rgba(0, 0, 0, 0.3)'
+                    }}>
+                      OUT OF STOCK
+                    </span>
+                  )}
+                </div>
+
+                {/* Product Info */}
+                <div style={{ padding: 'clamp(15px, 3vw, 20px)' }}>
+                  <h3
+                    style={{
+                      fontSize: 'clamp(0.85rem, 2vw, 0.95rem)',
+                      fontWeight: '600',
+                      color: '#333',
+                      marginBottom: '10px',
+                      lineHeight: '1.4',
+                      display: '-webkit-box',
+                      WebkitLineClamp: 2,
+                      WebkitBoxOrient: 'vertical',
                       overflow: 'hidden',
-                      background: '#f5f0ed'
+                      textOverflow: 'ellipsis',
+                      textTransform: 'uppercase',
+                      letterSpacing: '0.5px'
                     }}
                   >
-                    <Image
-                      src={product.image}
-                      alt={product.name}
-                      fill
-                      style={{
-                        objectFit: 'cover',
-                        objectPosition: 'center top',
-                        transition: 'transform 0.5s ease'
-                      }}
-                      sizes="(max-width: 768px) 100vw, (max-width: 1024px) 50vw, 33vw"
-                      unoptimized
-                      onMouseEnter={(e) => {
-                        e.currentTarget.style.transform = 'scale(1.05)';
-                      }}
-                      onMouseLeave={(e) => {
-                        e.currentTarget.style.transform = 'scale(1)';
-                      }}
-                    />
-                  </div>
+                    {product.name}
+                  </h3>
 
-                  {/* Product Info */}
-                  <div style={{ padding: 'clamp(15px, 3vw, 20px)' }}>
-                    <h3
+                  {/* Price */}
+                  <div className="d-flex align-items-center gap-2">
+                    <span
+                      style={{
+                        fontSize: 'clamp(1rem, 2.5vw, 1.2rem)',
+                        fontWeight: '700',
+                        color: '#dc747d'
+                      }}
+                    >
+                      Rs. {product.price.toLocaleString('en-IN')}
+                    </span>
+                    <span
                       style={{
                         fontSize: 'clamp(0.85rem, 2vw, 0.95rem)',
-                        fontWeight: '600',
-                        color: '#333',
-                        marginBottom: '10px',
-                        lineHeight: '1.4',
-                        display: '-webkit-box',
-                        WebkitLineClamp: 2,
-                        WebkitBoxOrient: 'vertical',
-                        overflow: 'hidden',
-                        textOverflow: 'ellipsis',
-                        textTransform: 'uppercase',
-                        letterSpacing: '0.5px'
+                        fontWeight: '500',
+                        color: '#999',
+                        textDecoration: 'line-through'
                       }}
                     >
-                      {product.name}
-                    </h3>
+                      Rs. {product.originalPrice.toLocaleString('en-IN')}
+                    </span>
+                  </div>
 
-                    {/* Price */}
-                    <div className="d-flex align-items-center gap-2">
-                      <span
-                        style={{
-                          fontSize: 'clamp(1rem, 2.5vw, 1.2rem)',
-                          fontWeight: '700',
-                          color: '#dc747d'
-                        }}
-                      >
-                        Rs. {product.price.toLocaleString('en-IN')}
-                      </span>
-                      <span
-                        style={{
-                          fontSize: 'clamp(0.85rem, 2vw, 0.95rem)',
-                          fontWeight: '500',
-                          color: '#999',
-                          textDecoration: 'line-through'
-                        }}
-                      >
-                        Rs. {product.originalPrice.toLocaleString('en-IN')}
-                      </span>
-                    </div>
-
-                    {/* Discount Badge */}
-                    <div
-                      style={{
-                        display: 'inline-block',
-                        marginTop: '8px',
-                        padding: '4px 10px',
-                        background: 'rgba(220, 116, 125, 0.1)',
-                        color: '#dc747d',
-                        fontSize: 'clamp(0.7rem, 1.8vw, 0.8rem)',
-                        fontWeight: '600',
-                        borderRadius: '4px'
+                  {/* Discount Badge */}
+                  <div
+                    style={{
+                      display: 'inline-block',
+                      marginTop: '8px',
+                      padding: '4px 10px',
+                      background: 'rgba(220, 116, 125, 0.1)',
+                      color: '#dc747d',
+                      fontSize: 'clamp(0.7rem, 1.8vw, 0.8rem)',
+                      fontWeight: '600',
+                      borderRadius: '4px'
+                    }}
+                  >
+                    {Math.round(((product.originalPrice - product.price) / product.originalPrice) * 100)}% OFF
+                  </div>
+                  <div className="d-flex gap-2 mt-3">
+                    <button
+                      type="button"
+                      className={`btn btn-sm flex-fill ${isOutOfStock(product) ? 'btn-outline-danger' : 'btn-dark'}`}
+                      onClick={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        if (isOutOfStock(product)) {
+                          showSnackbar(`"${product.name}" is currently out of stock.`, 'warning');
+                          return;
+                        }
+                        addProductToCart(product);
                       }}
                     >
-                      {Math.round(((product.originalPrice - product.price) / product.originalPrice) * 100)}% OFF
-                    </div>
-                    <div className="d-flex gap-2 mt-3">
-                      <button
-                        type="button"
-                        className="btn btn-sm btn-dark flex-fill"
-                        onClick={(e) => {
-                          e.preventDefault();
-                          e.stopPropagation();
-                          addProductToCart(product);
-                        }}
-                      >
-                        Add to Cart
-                      </button>
-                      <button
-                        type="button"
-                        className="btn btn-sm btn-outline-dark flex-fill"
-                        onClick={(e) => {
-                          e.preventDefault();
-                          e.stopPropagation();
-                          router.push(getCheckoutHref(product));
-                        }}
-                      >
-                        Shop now
-                      </button>
-                    </div>
+                      {isOutOfStock(product) ? 'Out of Stock' : 'Add to Cart'}
+                    </button>
+                    <button
+                      type="button"
+                      className="btn btn-sm btn-outline-dark flex-fill"
+                      onClick={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        if (isOutOfStock(product)) {
+                          showSnackbar(`"${product.name}" is currently out of stock.`, 'warning');
+                          return;
+                        }
+                        router.push(getCheckoutHref(product));
+                      }}
+                    >
+                      Shop now
+                    </button>
                   </div>
                 </div>
-              </Link>
+              </div>
             </div>
           ))}
         </div>
@@ -338,6 +481,40 @@ export default function Categories() {
           </Link>
         </div>
       </div>
+      <ProductModal
+        product={selectedProduct}
+        onClose={() => setSelectedProduct(null)}
+        onAddToCart={(p) => {
+          const maxStock = p.inventory ?? getProductStock(p.id);
+          const res = addToCart({
+            id: String(p.id),
+            name: p.name,
+            image: p.image,
+            price: p.price,
+          }, maxStock);
+          if (!res.success) {
+            if (res.reason === 'out_of_stock') {
+              showSnackbar(`"${p.name}" is currently out of stock.`, 'warning');
+            } else if (res.reason === 'max_reached') {
+              showSnackbar(
+                `Only ${res.maxStock} piece${(res.maxStock ?? 1) > 1 ? 's' : ''} available for "${p.name}". You already have ${res.currentQty} in your cart.`,
+                'warning'
+              );
+            }
+            return;
+          }
+          showSnackbar(`Added "${p.name}" to cart!`, 'success');
+        }}
+        isWishlisted={selectedProduct ? wishlistIds.has(String(selectedProduct.id)) : false}
+        onToggleWishlist={(p) => {
+          toggleWishlist({
+            id: String(p.id),
+            name: p.name,
+            price: p.price,
+            image: p.image,
+          });
+        }}
+      />
     </section>
   );
 }

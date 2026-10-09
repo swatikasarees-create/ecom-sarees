@@ -92,12 +92,22 @@ export async function GET(request: NextRequest) {
   }
 
   const orderIdParam = request.nextUrl.searchParams.get('orderId')?.trim() ?? '';
+  const phoneParam = request.nextUrl.searchParams.get('phone')?.trim() ?? '';
   const emailParam = request.nextUrl.searchParams.get('email')?.trim().toLowerCase() ?? '';
 
-  if (!orderIdParam && !emailParam) {
+  if (!orderIdParam) {
     return jsonWithCors(
       request,
-      { message: 'Enter your order ID or the email used at checkout.' },
+      { message: 'Please enter your Order ID.' },
+      { status: 400 }
+    );
+  }
+
+  const cleanPhone = phoneParam.replace(/\D/g, '').slice(-10);
+  if (!cleanPhone && !emailParam) {
+    return jsonWithCors(
+      request,
+      { message: 'Please provide either your contact number or email ID to verify this order.' },
       { status: 400 }
     );
   }
@@ -106,76 +116,52 @@ export async function GET(request: NextRequest) {
     await ensureOrdersTables();
     const db = getDbPool();
 
-    if (orderIdParam && emailParam) {
-      const [rows] = await db.query(
-        `SELECT * FROM orders WHERE order_id = ? AND LOWER(TRIM(COALESCE(customer_email, ''))) = ? LIMIT 1`,
-        [orderIdParam, emailParam]
-      );
-      const order = (rows as DbOrder[])[0];
-      if (!order) {
-        return jsonWithCors(
-          request,
-          { message: 'No order matches this order ID and email. Check the details and try again.' },
-          { status: 404 }
-        );
-      }
-      const [itemRows] = await db.query(
-        `SELECT * FROM order_items WHERE order_id = ? ORDER BY id ASC`,
-        [order.id]
-      );
-      return jsonWithCors(request, { kind: 'single', order: mapOrder(order, itemRows as DbOrderItem[]) });
-    }
-
-    if (orderIdParam) {
-      const [rows] = await db.query(`SELECT * FROM orders WHERE order_id = ? LIMIT 1`, [orderIdParam]);
-      const order = (rows as DbOrder[])[0];
-      if (!order) {
-        return jsonWithCors(request, { message: 'We could not find an order with that ID.' }, { status: 404 });
-      }
-      const [itemRows] = await db.query(
-        `SELECT * FROM order_items WHERE order_id = ? ORDER BY id ASC`,
-        [order.id]
-      );
-      return jsonWithCors(request, { kind: 'single', order: mapOrder(order, itemRows as DbOrderItem[]) });
-    }
-
-    const [listRows] = await db.query(
-      `
-      SELECT o.id, o.order_id, o.customer_name, o.amount, o.status, o.created_at,
-        (SELECT COUNT(*) FROM order_items oi WHERE oi.order_id = o.id) AS item_count
-      FROM orders o
-      WHERE LOWER(TRIM(COALESCE(o.customer_email, ''))) = ?
-      ORDER BY o.created_at DESC
-      LIMIT 25
-      `,
-      [emailParam]
+    const [rows] = await db.query(
+      `SELECT * FROM orders WHERE order_id = ? LIMIT 1`,
+      [orderIdParam]
     );
-    const list = listRows as {
-      id: number;
-      order_id: string;
-      customer_name: string;
-      amount: string | number;
-      status: string;
-      created_at: string;
-      item_count: number;
-    }[];
-    if (list.length === 0) {
-      return jsonWithCors(request, {
-        kind: 'list',
-        orders: [],
-        message: 'No orders found for this email.',
-      });
+
+    const order = (rows as DbOrder[])[0];
+    if (!order) {
+      return jsonWithCors(
+        request,
+        { message: 'No order found with this Order ID.' },
+        { status: 404 }
+      );
     }
+
+    // Security Verification: Match contact number OR email ID
+    const dbCleanPhone = (order.customer_phone || '').replace(/\D/g, '').slice(-10);
+    const dbEmail = (order.customer_email || '').trim().toLowerCase();
+
+    let verified = false;
+    if (cleanPhone && cleanPhone.length === 10 && dbCleanPhone === cleanPhone) {
+      verified = true;
+    } else if (emailParam && dbEmail && dbEmail === emailParam) {
+      verified = true;
+    }
+
+    if (!verified) {
+      const fieldDesc = cleanPhone && emailParam
+        ? 'mobile number and email ID'
+        : emailParam
+        ? 'email address'
+        : 'mobile number';
+      return jsonWithCors(
+        request,
+        { message: `The ${fieldDesc} entered does not match our records for this order. Please try again.` },
+        { status: 403 }
+      );
+    }
+
+    const [itemRows] = await db.query(
+      `SELECT * FROM order_items WHERE order_id = ? ORDER BY id ASC`,
+      [order.id]
+    );
+
     return jsonWithCors(request, {
-      kind: 'list',
-      orders: list.map((row) => ({
-        orderId: row.order_id,
-        customerName: row.customer_name,
-        amount: Number(row.amount),
-        status: row.status,
-        createdAt: row.created_at,
-        itemCount: Number(row.item_count),
-      })),
+      kind: 'single',
+      order: mapOrder(order, itemRows as DbOrderItem[]),
     });
   } catch (error) {
     const message = error instanceof Error ? error.message : 'Unable to look up order.';

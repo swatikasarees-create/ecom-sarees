@@ -1,10 +1,17 @@
 'use client';
 
+import { useState, useEffect } from 'react';
 import { Swiper, SwiperSlide } from 'swiper/react';
 import { Pagination, Navigation } from 'swiper/modules';
 import Image from 'next/image';
 import Link from 'next/link';
 import { getProductImageByHash } from '../lib/productImage';
+import { addToCart } from '../lib/commerceStore';
+import { getWishlist, toggleWishlist, getWishlistEventName } from '../lib/wishlistStore';
+import { showSnackbar } from '../lib/snackbar';
+import { getCatalogProducts, type Product as FullProduct } from '../lib/productData';
+import { apiUrl } from '../lib/apiBase';
+import ProductModal from './ProductModal';
 
 // Import Swiper styles
 import 'swiper/css';
@@ -12,10 +19,138 @@ import 'swiper/css/pagination';
 import 'swiper/css/navigation';
 
 const instaImg = (hash: string) => getProductImageByHash(hash);
-const toCheckoutHref = (productId: number, productName: string) =>
-  `/checkout?productId=${productId}&product=${encodeURIComponent(productName)}`;
+
+interface HeroProduct {
+  id: string;
+  name: string;
+  price: number;
+  image: string;
+  description: string;
+}
+
+const trendingList: HeroProduct[] = [
+  {
+    id: '7',
+    name: 'Cream Saree – Pink Border',
+    price: 11000,
+    image: instaImg('ba76809e38182a59fc059fd1b5ff8d54fbef1671671d7dc2d45e60da014280e0'),
+    description: 'Classic cream base meets a striking pink border and ornate motif detailing—ideal for wedding rituals and special occasions. ₹11,000',
+  },
+  {
+    id: '40',
+    name: 'Patola Silk Saree',
+    price: 6000,
+    image: instaImg('d572b2ddeebc5c37c8eb4c63deb69e10c3543589c62374ec45558d4217058267'),
+    description: 'Stunning Patola silk saree with intricate traditional patterns, vibrant red base and contrasting golden border. ₹6,000',
+  },
+  {
+    id: '18',
+    name: 'Tissue Silk Saree',
+    price: 4999,
+    image: instaImg('33b3c5ac84e7f428324c6d67f6a7f0732598ee87e26a0b165e594c3932725ac9'),
+    description: 'Luxurious tissue silk saree with a graceful silhouette and subtle natural sheen—perfect for weddings and festive celebrations. ₹4,999',
+  },
+  {
+    id: '5',
+    name: 'Net Embellished Saree',
+    price: 8000,
+    image: instaImg('46a257b9b9f758da7849f836bf71346d414778c4382aac9c626a44c1c91301b9'),
+    description: 'Seafoam saree with detailed embroidered border and sequin work for a refined shine. Sophisticated for weddings and evening celebrations. ₹8,000',
+  },
+  {
+    id: '6',
+    name: 'Rust Orange Silk Saree',
+    price: 4500,
+    image: instaImg('b9606fa353f07c69822a7f45e9dff88435ded645dc85564219b7027cf3b5ac5f'),
+    description: 'Rich rust-orange saree with bandhani-inspired pattern and standout metallic pallu—perfect for cultural events and wedding functions. ₹4,500',
+  },
+  {
+    id: '35',
+    name: 'Stone Work Net Saree',
+    price: 11000,
+    image: instaImg('8f984c7487be2c119a063599ec22580bfdb5b1a3476cd89793531fe8ddc9c3a6'),
+    description: 'Graceful net saree adorned with intricate stone work and elegant detailing—designed for luxurious sparkle at weddings and receptions. ₹11,000',
+  },
+];
 
 export default function HeroSection() {
+  const [stockMap, setStockMap] = useState<Record<string, { inventory: number; availability: string }>>({});
+  const [allProducts, setAllProducts] = useState<FullProduct[]>(() => getCatalogProducts(true));
+  const [selectedProduct, setSelectedProduct] = useState<FullProduct | null>(null);
+  const [wishlistIds, setWishlistIds] = useState<Set<string>>(new Set());
+
+  useEffect(() => {
+    let active = true;
+    fetch(apiUrl('/api/products'))
+      .then((res) => (res.ok ? res.json() : null))
+      .then((data) => {
+        if (active && Array.isArray(data?.products)) {
+          setAllProducts(data.products);
+          const map: Record<string, { availability: string; inventory: number }> = {};
+          for (const p of data.products) {
+            map[String(p.id)] = {
+              availability: p.availability,
+              inventory: p.inventory ?? 0,
+            };
+          }
+          setStockMap(map);
+        }
+      })
+      .catch(() => {});
+    return () => {
+      active = false;
+    };
+  }, []);
+
+  useEffect(() => {
+    const syncWishlist = () => {
+      setWishlistIds(new Set(getWishlist().map((w) => String(w.id))));
+    };
+    syncWishlist();
+    const eventName = getWishlistEventName();
+    window.addEventListener(eventName, syncWishlist);
+    return () => window.removeEventListener(eventName, syncWishlist);
+  }, []);
+
+  const isOutOfStock = (product: HeroProduct) => {
+    const stock = stockMap[product.id];
+    if (stock) {
+      return stock.inventory <= 0 || stock.availability === 'out_of_stock';
+    }
+    const cat = allProducts.find((p) => String(p.id) === product.id);
+    if (cat) {
+      return cat.availability === 'out_of_stock' || (cat.inventory !== undefined && cat.inventory <= 0);
+    }
+    return false;
+  };
+
+  const openProductModal = (product: HeroProduct) => {
+    const full = allProducts.find((p) => String(p.id) === product.id);
+    if (full) {
+      const stock = stockMap[product.id];
+      const inv = stock ? stock.inventory : full.inventory;
+      const avail = stock ? stock.availability : full.availability;
+      setSelectedProduct({
+        ...full,
+        inventory: inv,
+        availability: (avail === 'out_of_stock' || (inv !== undefined && inv <= 0)) ? 'out_of_stock' : 'in_stock',
+      });
+    } else {
+      setSelectedProduct({
+        id: product.id,
+        name: product.name,
+        price: product.price,
+        image: product.image,
+        category: 'Sarees',
+        fabric: 'Silk',
+        color: 'Multi',
+        availability: isOutOfStock(product) ? 'out_of_stock' : 'in_stock',
+        inventory: stockMap[product.id]?.inventory ?? 10,
+        description: product.description,
+      });
+    }
+  };
+
   return (
     <section id="billboard" className="bg-light py-3 py-md-5">
       <div className="container">
@@ -52,165 +187,108 @@ export default function HeroSection() {
                 }}
                 className="border-animation-left"
               >
-              <SwiperSlide>
-                <div className="banner-item image-zoom-effect">
-                  <div className="image-holder position-relative" style={{ height: 'clamp(300px, 60vw, 500px)', overflow: 'hidden' }}>
-                    <Link href={toCheckoutHref(7, 'Cream Saree – Pink Border')}>
-                      <Image
-                        src={instaImg('ba76809e38182a59fc059fd1b5ff8d54fbef1671671d7dc2d45e60da014280e0')}
-                        alt="Cream Saree with Vibrant Pink Border"
-                        fill
-                        style={{ objectFit: 'cover', objectPosition: 'center top' }}
-                        priority
-                        unoptimized
-                      />
-                    </Link>
-                  </div>
-                  <div className="banner-content py-3 py-md-4 px-2 px-md-0">
-                    <h5 className="element-title text-uppercase" style={{ fontSize: 'clamp(0.9rem, 3vw, 1.25rem)' }}>
-                      <Link href={toCheckoutHref(7, 'Cream Saree – Pink Border')} className="item-anchor">Cream Saree – Pink Border</Link>
-                    </h5>
-                    <p className="d-none d-md-block" style={{ fontSize: 'clamp(0.85rem, 2vw, 1rem)' }}>Classic cream base meets a striking pink border and ornate motif detailing—ideal for wedding rituals and special occasions. ₹11,000</p>
-                    <div className="btn-left">
-                      <Link href="/checkout?productId=7&product=Cream%20Saree%20%E2%80%93%20Pink%20Border" className="btn-link text-uppercase item-anchor text-decoration-none" style={{ fontSize: 'clamp(0.75rem, 2vw, 1rem)' }}>Shop Now</Link>
+                {trendingList.map((product, idx) => (
+                  <SwiperSlide key={product.id}>
+                    <div
+                      className="banner-item image-zoom-effect"
+                      role="button"
+                      tabIndex={0}
+                      onClick={() => openProductModal(product)}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter' || e.key === ' ') {
+                          e.preventDefault();
+                          openProductModal(product);
+                        }
+                      }}
+                      style={{ cursor: 'pointer' }}
+                    >
+                      <div
+                        role="button"
+                        tabIndex={0}
+                        onClick={() => openProductModal(product)}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter' || e.key === ' ') {
+                            e.preventDefault();
+                            openProductModal(product);
+                          }
+                        }}
+                        className="image-holder position-relative"
+                        style={{ height: 'clamp(300px, 60vw, 500px)', overflow: 'hidden', cursor: 'pointer' }}
+                      >
+                        <Image
+                          src={product.image}
+                          alt={product.name}
+                          fill
+                          style={{
+                            objectFit: 'cover',
+                            objectPosition: 'center top',
+                            filter: isOutOfStock(product) ? 'grayscale(35%) opacity(0.85)' : 'none',
+                          }}
+                          priority={idx === 0}
+                          unoptimized
+                        />
+                        {isOutOfStock(product) && (
+                          <span
+                            className="badge position-absolute"
+                            style={{
+                              top: '15px',
+                              left: '15px',
+                              backgroundColor: '#1c1b1f',
+                              color: 'white',
+                              padding: '6px 14px',
+                              fontSize: '11px',
+                              fontWeight: '700',
+                              letterSpacing: '1px',
+                              borderRadius: '20px',
+                              zIndex: 3,
+                              boxShadow: '0 4px 12px rgba(0, 0, 0, 0.3)',
+                            }}
+                          >
+                            OUT OF STOCK
+                          </span>
+                        )}
+                      </div>
+                      <div className="banner-content py-3 py-md-4 px-2 px-md-0">
+                        <h5 className="element-title text-uppercase" style={{ fontSize: 'clamp(0.9rem, 3vw, 1.25rem)' }}>
+                          <span
+                            role="button"
+                            tabIndex={0}
+                            className="item-anchor"
+                            style={{ cursor: 'pointer' }}
+                            onClick={() => openProductModal(product)}
+                          >
+                            {product.name}
+                          </span>
+                        </h5>
+                        <p className="d-none d-md-block" style={{ fontSize: 'clamp(0.85rem, 2vw, 1rem)' }}>
+                          {product.description}
+                        </p>
+                        <div className="btn-left">
+                          <button
+                            type="button"
+                            onClick={() => openProductModal(product)}
+                            className="btn-link text-uppercase item-anchor text-decoration-none border-0 bg-transparent p-0"
+                            style={{ fontSize: 'clamp(0.75rem, 2vw, 1rem)', cursor: 'pointer', fontWeight: '600' }}
+                          >
+                            {isOutOfStock(product) ? 'Out of Stock' : 'View Details →'}
+                          </button>
+                        </div>
+                      </div>
                     </div>
-                  </div>
-                </div>
-              </SwiperSlide>
-              <SwiperSlide>
-                <div className="banner-item image-zoom-effect">
-                  <div className="image-holder position-relative" style={{ height: 'clamp(300px, 60vw, 500px)', overflow: 'hidden' }}>
-                    <Link href={toCheckoutHref(40, 'Patola Silk Saree')}>
-                      <Image
-                        src={instaImg('d572b2ddeebc5c37c8eb4c63deb69e10c3543589c62374ec45558d4217058267')}
-                        alt="Patola Silk Saree"
-                        fill
-                        style={{ objectFit: 'cover', objectPosition: 'center top' }}
-                        priority
-                        unoptimized
-                      />
-                    </Link>
-                  </div>
-                  <div className="banner-content py-3 py-md-4 px-2 px-md-0">
-                    <h5 className="element-title text-uppercase" style={{ fontSize: 'clamp(0.9rem, 3vw, 1.25rem)' }}>
-                      <Link href={toCheckoutHref(40, 'Patola Silk Saree')} className="item-anchor">Patola Silk Saree</Link>
-                    </h5>
-                    <p className="d-none d-md-block" style={{ fontSize: 'clamp(0.85rem, 2vw, 1rem)' }}>Stunning Patola silk saree with intricate traditional patterns, vibrant red base and contrasting golden border. ₹6,000</p>
-                    <div className="btn-left">
-                      <Link href="/checkout?productId=40&product=Patola%20Silk%20Saree" className="btn-link text-uppercase item-anchor text-decoration-none" style={{ fontSize: 'clamp(0.75rem, 2vw, 1rem)' }}>Shop Now</Link>
-                    </div>
-                  </div>
-                </div>
-              </SwiperSlide>
-              <SwiperSlide>
-                <div className="banner-item image-zoom-effect">
-                  <div className="image-holder position-relative" style={{ height: 'clamp(300px, 60vw, 500px)', overflow: 'hidden' }}>
-                    <Link href={toCheckoutHref(18, 'Tissue Silk Saree')}>
-                      <Image
-                        src={instaImg('33b3c5ac84e7f428324c6d67f6a7f0732598ee87e26a0b165e594c3932725ac9')}
-                        alt="Tissue Silk Saree"
-                        fill
-                        style={{ objectFit: 'cover', objectPosition: 'center top' }}
-                        priority
-                        unoptimized
-                      />
-                    </Link>
-                  </div>
-                  <div className="banner-content py-3 py-md-4 px-2 px-md-0">
-                    <h5 className="element-title text-uppercase" style={{ fontSize: 'clamp(0.9rem, 3vw, 1.25rem)' }}>
-                      <Link href={toCheckoutHref(18, 'Tissue Silk Saree')} className="item-anchor">Tissue Silk Saree</Link>
-                    </h5>
-                    <p className="d-none d-md-block" style={{ fontSize: 'clamp(0.85rem, 2vw, 1rem)' }}>Luxurious tissue silk saree with a graceful silhouette and subtle natural sheen—perfect for weddings and festive celebrations. ₹4,999</p>
-                    <div className="btn-left">
-                      <Link href="/checkout?productId=18&product=Tissue%20Silk%20Saree" className="btn-link text-uppercase item-anchor text-decoration-none" style={{ fontSize: 'clamp(0.75rem, 2vw, 1rem)' }}>Shop Now</Link>
-                    </div>
-                  </div>
-                </div>
-              </SwiperSlide>
-              <SwiperSlide>
-                <div className="banner-item image-zoom-effect">
-                  <div className="image-holder position-relative" style={{ height: 'clamp(300px, 60vw, 500px)', overflow: 'hidden' }}>
-                    <Link href={toCheckoutHref(5, 'Net Embellished Saree')}>
-                      <Image
-                        src={instaImg('46a257b9b9f758da7849f836bf71346d414778c4382aac9c626a44c1c91301b9')}
-                        alt="Net Embellished Saree"
-                        fill
-                        style={{ objectFit: 'cover', objectPosition: 'center top' }}
-                        unoptimized
-                      />
-                    </Link>
-                  </div>
-                  <div className="banner-content py-3 py-md-4 px-2 px-md-0">
-                    <h5 className="element-title text-uppercase" style={{ fontSize: 'clamp(0.9rem, 3vw, 1.25rem)' }}>
-                      <Link href={toCheckoutHref(5, 'Net Embellished Saree')} className="item-anchor">Net Embellished Saree</Link>
-                    </h5>
-                    <p className="d-none d-md-block" style={{ fontSize: 'clamp(0.85rem, 2vw, 1rem)' }}>Seafoam saree with detailed embroidered border and sequin work for a refined shine. Sophisticated for weddings and evening celebrations. ₹8,000</p>
-                    <div className="btn-left">
-                      <Link href="/checkout?productId=5&product=Net%20Embellished%20Saree" className="btn-link text-uppercase item-anchor text-decoration-none" style={{ fontSize: 'clamp(0.75rem, 2vw, 1rem)' }}>Shop Now</Link>
-                    </div>
-                  </div>
-                </div>
-              </SwiperSlide>
-              <SwiperSlide>
-                <div className="banner-item image-zoom-effect">
-                  <div className="image-holder position-relative" style={{ height: 'clamp(300px, 60vw, 500px)', overflow: 'hidden' }}>
-                    <Link href={toCheckoutHref(6, 'Rust Orange Silk Saree')}>
-                      <Image
-                        src={instaImg('b9606fa353f07c69822a7f45e9dff88435ded645dc85564219b7027cf3b5ac5f')}
-                        alt="Rust Orange Silk Saree"
-                        fill
-                        style={{ objectFit: 'cover', objectPosition: 'center top' }}
-                        unoptimized
-                      />
-                    </Link>
-                  </div>
-                  <div className="banner-content py-3 py-md-4 px-2 px-md-0">
-                    <h5 className="element-title text-uppercase" style={{ fontSize: 'clamp(0.9rem, 3vw, 1.25rem)' }}>
-                      <Link href={toCheckoutHref(6, 'Rust Orange Silk Saree')} className="item-anchor">Rust Orange Silk Saree</Link>
-                    </h5>
-                    <p className="d-none d-md-block" style={{ fontSize: 'clamp(0.85rem, 2vw, 1rem)' }}>Rich rust-orange saree with bandhani-inspired pattern and standout metallic pallu—perfect for cultural events and wedding functions. ₹4,500</p>
-                    <div className="btn-left">
-                      <Link href="/checkout?productId=6&product=Rust%20Orange%20Silk%20Saree" className="btn-link text-uppercase item-anchor text-decoration-none" style={{ fontSize: 'clamp(0.75rem, 2vw, 1rem)' }}>Shop Now</Link>
-                    </div>
-                  </div>
-                </div>
-              </SwiperSlide>
-              <SwiperSlide>
-                <div className="banner-item image-zoom-effect">
-                  <div className="image-holder position-relative" style={{ height: 'clamp(300px, 60vw, 500px)', overflow: 'hidden' }}>
-                    <Link href={toCheckoutHref(35, 'Stone Work Net Saree')}>
-                      <Image
-                        src={instaImg('8f984c7487be2c119a063599ec22580bfdb5b1a3476cd89793531fe8ddc9c3a6')}
-                        alt="Stone Work Net Saree"
-                        fill
-                        style={{ objectFit: 'cover', objectPosition: 'center top' }}
-                        unoptimized
-                      />
-                    </Link>
-                  </div>
-                  <div className="banner-content py-3 py-md-4 px-2 px-md-0">
-                    <h5 className="element-title text-uppercase" style={{ fontSize: 'clamp(0.9rem, 3vw, 1.25rem)' }}>
-                      <Link href={toCheckoutHref(35, 'Stone Work Net Saree')} className="item-anchor">Stone Work Net Saree</Link>
-                    </h5>
-                    <p className="d-none d-md-block" style={{ fontSize: 'clamp(0.85rem, 2vw, 1rem)' }}>Graceful net saree adorned with intricate stone work and elegant detailing—designed for luxurious sparkle at weddings and receptions. ₹11,000</p>
-                    <div className="btn-left">
-                      <Link href="/checkout?productId=35&product=Stone%20Work%20Net%20Saree" className="btn-link text-uppercase item-anchor text-decoration-none" style={{ fontSize: 'clamp(0.75rem, 2vw, 1rem)' }}>Shop Now</Link>
-                    </div>
-                  </div>
-                </div>
-              </SwiperSlide>
-            </Swiper>
-            <div className="swiper-pagination"></div>
-            <div className="icon-arrow icon-arrow-left">
-              <svg width="50" height="50" viewBox="0 0 24 24">
-                <use xlinkHref="#arrow-left"></use>
-              </svg>
-            </div>
-            <div className="icon-arrow icon-arrow-right">
-              <svg width="50" height="50" viewBox="0 0 24 24">
-                <use xlinkHref="#arrow-right"></use>
-              </svg>
-            </div>
+                  </SwiperSlide>
+                ))}
+              </Swiper>
+              <div className="swiper-pagination"></div>
+              <div className="icon-arrow icon-arrow-left">
+                <svg width="50" height="50" viewBox="0 0 24 24">
+                  <use xlinkHref="#arrow-left"></use>
+                </svg>
+              </div>
+              <div className="icon-arrow icon-arrow-right">
+                <svg width="50" height="50" viewBox="0 0 24 24">
+                  <use xlinkHref="#arrow-right"></use>
+                </svg>
+              </div>
             </div>
           </div>
         </div>
@@ -226,6 +304,40 @@ export default function HeroSection() {
           }
         }
       `}</style>
+      <ProductModal
+        product={selectedProduct}
+        onClose={() => setSelectedProduct(null)}
+        onAddToCart={(p) => {
+          const maxStock = p.inventory;
+          const res = addToCart({
+            id: String(p.id),
+            name: p.name,
+            image: p.image,
+            price: p.price,
+          }, maxStock);
+          if (!res.success) {
+            if (res.reason === 'out_of_stock') {
+              showSnackbar(`"${p.name}" is currently out of stock.`, 'warning');
+            } else if (res.reason === 'max_reached') {
+              showSnackbar(
+                `Only ${res.maxStock} piece${(res.maxStock ?? 1) > 1 ? 's' : ''} available for "${p.name}". You already have ${res.currentQty} in your cart.`,
+                'warning'
+              );
+            }
+            return;
+          }
+          showSnackbar(`Added "${p.name}" to cart!`, 'success');
+        }}
+        isWishlisted={selectedProduct ? wishlistIds.has(String(selectedProduct.id)) : false}
+        onToggleWishlist={(p) => {
+          toggleWishlist({
+            id: String(p.id),
+            name: p.name,
+            price: p.price,
+            image: p.image,
+          });
+        }}
+      />
     </section>
   );
 }

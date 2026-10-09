@@ -133,20 +133,40 @@ export default function ProductsAdminClient() {
 
   const onUploadImage = async (file: File) => {
     setUploading(true);
+    setError('');
     try {
-      const fd = new FormData();
-      fd.append('file', file);
-      const res = await fetch(apiUrl('/api/admin/upload'), {
+      // 1. Request signed authorization parameters from backend
+      const signRes = await fetch(apiUrl('/api/admin/upload'), {
         method: 'POST',
         credentials: apiFetchCredentials(),
-        body: fd,
       });
-      const data = await res.json();
-      if (!res.ok) {
-        setError(data?.message ?? 'Image upload failed.');
+      const signData = await signRes.json();
+      if (!signRes.ok) {
+        setError(signData?.message ?? 'Failed to get upload authorization.');
         return;
       }
-      setForm((prev) => ({ ...prev, image_url: data.url }));
+
+      // 2. Upload file directly from browser to Cloudinary
+      const cloudFd = new FormData();
+      cloudFd.append('file', file);
+      cloudFd.append('api_key', signData.apiKey);
+      cloudFd.append('timestamp', String(signData.timestamp));
+      cloudFd.append('signature', signData.signature);
+      cloudFd.append('folder', signData.folder);
+
+      const uploadRes = await fetch(signData.uploadUrl, {
+        method: 'POST',
+        body: cloudFd,
+      });
+      const uploadData = await uploadRes.json();
+      if (!uploadRes.ok) {
+        setError(uploadData?.error?.message ?? 'Direct Cloudinary upload failed.');
+        return;
+      }
+
+      setForm((prev) => ({ ...prev, image_url: uploadData.secure_url }));
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Image upload failed.');
     } finally {
       setUploading(false);
     }
