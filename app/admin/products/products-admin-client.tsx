@@ -2,6 +2,7 @@
 
 import { FormEvent, useEffect, useMemo, useState } from 'react';
 import Image from 'next/image';
+import Link from 'next/link';
 import { adminAuthHeaders, apiFetchCredentials, apiUrl, clearStoredAdminToken } from '../../lib/apiBase';
 
 interface AdminProduct {
@@ -240,9 +241,14 @@ export default function ProductsAdminClient() {
           </p>
           <h1 style={{ margin: '6px 0 0', fontSize: 'clamp(1.5rem, 3vw, 2rem)' }}>Manage Products</h1>
         </div>
-        <button className="btn btn-outline-dark btn-sm" onClick={onLogout}>
-          Logout
-        </button>
+        <div className="d-flex gap-2 flex-wrap">
+          <Link className="btn btn-outline-dark btn-sm" href="/admin/orders">
+            Orders
+          </Link>
+          <button className="btn btn-outline-dark btn-sm" onClick={onLogout}>
+            Logout
+          </button>
+        </div>
       </div>
 
       <form
