@@ -32,6 +32,26 @@ export default function ProductsAdminClient() {
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState('');
   const [search, setSearch] = useState('');
+  const [sortBy, setSortBy] = useState<'id' | 'name' | 'category' | 'inventory' | 'price'>('id');
+  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
+  const [categoryFilter, setCategoryFilter] = useState('all');
+
+  const categories = useMemo(() => {
+    const set = new Set<string>();
+    products.forEach((p) => {
+      if (p.category) set.add(p.category);
+    });
+    return Array.from(set).sort();
+  }, [products]);
+
+  const toggleSort = (field: 'id' | 'name' | 'category' | 'inventory' | 'price') => {
+    if (sortBy === field) {
+      setSortOrder((prev) => (prev === 'asc' ? 'desc' : 'asc'));
+    } else {
+      setSortBy(field);
+      setSortOrder(field === 'name' || field === 'category' ? 'asc' : 'desc');
+    }
+  };
 
   const loadProducts = async () => {
     setLoading(true);
@@ -60,15 +80,41 @@ export default function ProductsAdminClient() {
   }, []);
 
   const filteredProducts = useMemo(() => {
+    let list = [...products];
+
+    if (categoryFilter !== 'all') {
+      list = list.filter((p) => p.category.toLowerCase() === categoryFilter.toLowerCase());
+    }
+
     const term = search.trim().toLowerCase();
-    if (!term) return products;
-    return products.filter(
-      (p) =>
-        p.name.toLowerCase().includes(term) ||
-        p.category.toLowerCase().includes(term) ||
-        p.description.toLowerCase().includes(term)
-    );
-  }, [products, search]);
+    if (term) {
+      list = list.filter(
+        (p) =>
+          p.name.toLowerCase().includes(term) ||
+          p.category.toLowerCase().includes(term) ||
+          p.description.toLowerCase().includes(term) ||
+          String(p.id).includes(term)
+      );
+    }
+
+    list.sort((a, b) => {
+      let comparison = 0;
+      if (sortBy === 'id') {
+        comparison = a.id - b.id;
+      } else if (sortBy === 'name') {
+        comparison = a.name.localeCompare(b.name, undefined, { sensitivity: 'base' });
+      } else if (sortBy === 'category') {
+        comparison = a.category.localeCompare(b.category, undefined, { sensitivity: 'base' });
+      } else if (sortBy === 'inventory') {
+        comparison = a.inventory - b.inventory;
+      } else if (sortBy === 'price') {
+        comparison = a.price - b.price;
+      }
+      return sortOrder === 'asc' ? comparison : -comparison;
+    });
+
+    return list;
+  }, [products, search, categoryFilter, sortBy, sortOrder]);
 
   const resetForm = () => setForm(initialForm);
 
@@ -325,13 +371,53 @@ export default function ProductsAdminClient() {
           <h3 style={{ margin: 0, fontSize: '1.05rem' }}>
             Products ({filteredProducts.length})
           </h3>
-          <input
-            placeholder="Search name/category..."
-            className="form-control"
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            style={{ width: 260 }}
-          />
+          <div className="d-flex align-items-center gap-2 flex-wrap">
+            <select
+              className="form-select form-select-sm"
+              value={categoryFilter}
+              onChange={(e) => setCategoryFilter(e.target.value)}
+              style={{ width: 'auto', minWidth: 140 }}
+            >
+              <option value="all">All Categories</option>
+              {categories.map((c) => (
+                <option key={c} value={c}>
+                  {c}
+                </option>
+              ))}
+            </select>
+
+            <select
+              className="form-select form-select-sm"
+              value={`${sortBy}-${sortOrder}`}
+              onChange={(e) => {
+                const [f, o] = e.target.value.split('-') as [
+                  'id' | 'name' | 'category' | 'inventory' | 'price',
+                  'asc' | 'desc'
+                ];
+                setSortBy(f);
+                setSortOrder(o);
+              }}
+              style={{ width: 'auto', minWidth: 170 }}
+            >
+              <option value="id-desc">Newest First (ID ↓)</option>
+              <option value="id-asc">Oldest First (ID ↑)</option>
+              <option value="price-asc">Price: Low to High (₹ ↑)</option>
+              <option value="price-desc">Price: High to Low (₹ ↓)</option>
+              <option value="inventory-asc">Inventory: Low to High</option>
+              <option value="inventory-desc">Inventory: High to Low</option>
+              <option value="name-asc">Name: A to Z</option>
+              <option value="name-desc">Name: Z to A</option>
+              <option value="category-asc">Category: A to Z</option>
+            </select>
+
+            <input
+              placeholder="Search name/category/ID..."
+              className="form-control form-control-sm"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              style={{ width: 220 }}
+            />
+          </div>
         </div>
 
         {loading ? (
@@ -341,12 +427,42 @@ export default function ProductsAdminClient() {
             <table className="table table-striped align-middle">
               <thead>
                 <tr>
-                  <th>ID</th>
+                  <th
+                    onClick={() => toggleSort('id')}
+                    style={{ cursor: 'pointer', userSelect: 'none', whiteSpace: 'nowrap' }}
+                    title="Click to sort by ID"
+                  >
+                    ID {sortBy === 'id' ? (sortOrder === 'asc' ? '▲' : '▼') : '↕'}
+                  </th>
                   <th>Image</th>
-                  <th>Name</th>
-                  <th>Category</th>
-                  <th>Inventory</th>
-                  <th>Price</th>
+                  <th
+                    onClick={() => toggleSort('name')}
+                    style={{ cursor: 'pointer', userSelect: 'none', whiteSpace: 'nowrap' }}
+                    title="Click to sort by Name"
+                  >
+                    Name {sortBy === 'name' ? (sortOrder === 'asc' ? '▲' : '▼') : '↕'}
+                  </th>
+                  <th
+                    onClick={() => toggleSort('category')}
+                    style={{ cursor: 'pointer', userSelect: 'none', whiteSpace: 'nowrap' }}
+                    title="Click to sort by Category"
+                  >
+                    Category {sortBy === 'category' ? (sortOrder === 'asc' ? '▲' : '▼') : '↕'}
+                  </th>
+                  <th
+                    onClick={() => toggleSort('inventory')}
+                    style={{ cursor: 'pointer', userSelect: 'none', whiteSpace: 'nowrap' }}
+                    title="Click to sort by Inventory"
+                  >
+                    Inventory {sortBy === 'inventory' ? (sortOrder === 'asc' ? '▲' : '▼') : '↕'}
+                  </th>
+                  <th
+                    onClick={() => toggleSort('price')}
+                    style={{ cursor: 'pointer', userSelect: 'none', whiteSpace: 'nowrap' }}
+                    title="Click to sort by Price"
+                  >
+                    Price {sortBy === 'price' ? (sortOrder === 'asc' ? '▲' : '▼') : '↕'}
+                  </th>
                   <th style={{ minWidth: 160 }}>Actions</th>
                 </tr>
               </thead>
