@@ -19,6 +19,7 @@ interface DbProductRow extends RowDataPacket {
   price: string | number;
   original_price: string | number | null;
   image_url: string | null;
+  created_at?: string | Date | null;
 }
 
 export async function OPTIONS(request: NextRequest) {
@@ -59,7 +60,7 @@ export async function GET(request: NextRequest) {
     const db = getDbPool();
     const [rows] = await db.query<DbProductRow[]>(
       `SELECT id, name, description, category, fabric, color, collection,
-              inventory, price, original_price, image_url
+              inventory, price, original_price, image_url, created_at
        FROM products
        ORDER BY id ASC`
     );
@@ -78,6 +79,7 @@ export async function GET(request: NextRequest) {
         price: Number(row.price),
         originalPrice: row.original_price ? Number(row.original_price) : undefined,
         image: resolveProductImageUrl(row.image_url),
+        createdAt: row.created_at ? new Date(row.created_at).toISOString() : undefined,
       }));
 
       let filtered = includeTest ? [...dbProducts, ...getCatalogProducts(true).filter((p) => p.id === '__test_1inr')] : dbProducts;

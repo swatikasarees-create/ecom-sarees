@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
@@ -9,6 +9,7 @@ import { addToCart } from '../lib/commerceStore';
 import { getWishlist, toggleWishlist, getWishlistEventName } from '../lib/wishlistStore';
 import { showSnackbar } from '../lib/snackbar';
 import { getCatalogProducts, type Product as FullProduct } from '../lib/productData';
+import { createProductMix } from '../lib/productMix';
 import { apiUrl } from '../lib/apiBase';
 import ProductModal from './ProductModal';
 
@@ -164,7 +165,43 @@ export default function Categories() {
     }
   ];
 
-  const displayProducts = activeTab === 'bestSellers' ? bestSellers : newArrivals;
+  const dynamicBestSellers: Product[] = useMemo(() => {
+    const mix = createProductMix(allProducts, {
+      count: 3,
+      newCount: 2,
+      oldCount: 1,
+      preferredOldIds: ['7', '31', '40'],
+      filter: (p) => !/suit|kurta/i.test(p.category),
+    });
+    if (!mix.length) return bestSellers;
+    return mix.map((p) => ({
+      id: Number(p.id),
+      name: p.name,
+      image: p.image,
+      price: Number(p.price),
+      originalPrice: p.originalPrice ? Number(p.originalPrice) : Math.round(Number(p.price) * 1.4),
+    }));
+  }, [allProducts]);
+
+  const dynamicNewArrivals: Product[] = useMemo(() => {
+    const mix = createProductMix(allProducts, {
+      count: 3,
+      newCount: 2,
+      oldCount: 1,
+      preferredOldIds: ['18', '41', '36'],
+      filter: (p) => !/suit|kurta/i.test(p.category),
+    });
+    if (!mix.length) return newArrivals;
+    return mix.map((p) => ({
+      id: Number(p.id),
+      name: p.name,
+      image: p.image,
+      price: Number(p.price),
+      originalPrice: p.originalPrice ? Number(p.originalPrice) : Math.round(Number(p.price) * 1.4),
+    }));
+  }, [allProducts]);
+
+  const displayProducts = activeTab === 'bestSellers' ? dynamicBestSellers : dynamicNewArrivals;
 
   const getProductStock = (productId: string | number): number => {
     const stock = stockMap[String(productId)];

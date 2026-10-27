@@ -5,6 +5,7 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { getCatalogProducts, Product } from '../lib/productData';
+import { sortNewAdditionsFirst, sortOldAdditionsFirst } from '../lib/productMix';
 import { addToCart, getCartItemQty, getCartEventName } from '../lib/commerceStore';
 import { getWishlist, getWishlistEventName, toggleWishlist } from '../lib/wishlistStore';
 import { showSnackbar } from '../lib/snackbar';
@@ -144,6 +145,12 @@ export default function SareesContent({ section = 'sarees', typeQuery }: SareesC
     filtered = filtered.filter((product) => product.price >= priceRange[0] && product.price <= priceRange[1]);
 
     switch (sortBy) {
+      case 'date-new':
+        filtered = sortNewAdditionsFirst(filtered);
+        break;
+      case 'date-old':
+        filtered = sortOldAdditionsFirst(filtered);
+        break;
       case 'price-low':
         filtered.sort((a, b) => a.price - b.price);
         break;
@@ -157,6 +164,7 @@ export default function SareesContent({ section = 'sarees', typeQuery }: SareesC
         filtered.sort((a, b) => b.name.localeCompare(a.name));
         break;
       default:
+        filtered = sortNewAdditionsFirst(filtered);
         break;
     }
 
@@ -335,7 +343,8 @@ export default function SareesContent({ section = 'sarees', typeQuery }: SareesC
                 value={sortBy}
                 onChange={(event) => setSortBy(event.target.value)}
               >
-                <option value="date-new">Date, new to old</option>
+                <option value="date-new">New additions first</option>
+                <option value="date-old">Old additions first</option>
                 <option value="price-low">Price, low to high</option>
                 <option value="price-high">Price, high to low</option>
                 <option value="name-asc">Name, A to Z</option>

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { Swiper, SwiperSlide } from 'swiper/react';
 import { Pagination, Navigation } from 'swiper/modules';
 import Image from 'next/image';
@@ -10,6 +10,7 @@ import { addToCart } from '../lib/commerceStore';
 import { getWishlist, toggleWishlist, getWishlistEventName } from '../lib/wishlistStore';
 import { showSnackbar } from '../lib/snackbar';
 import { getCatalogProducts, type Product as FullProduct } from '../lib/productData';
+import { createProductMix } from '../lib/productMix';
 import { apiUrl } from '../lib/apiBase';
 import ProductModal from './ProductModal';
 
@@ -78,6 +79,25 @@ export default function HeroSection() {
   const [allProducts, setAllProducts] = useState<FullProduct[]>(() => getCatalogProducts(true));
   const [selectedProduct, setSelectedProduct] = useState<FullProduct | null>(null);
   const [wishlistIds, setWishlistIds] = useState<Set<string>>(new Set());
+
+  // Dynamically generate trending items: mainly newly added products + a few classic old ones
+  const displayTrendingList = useMemo(() => {
+    const mix = createProductMix(allProducts, {
+      count: 6,
+      newCount: 4,
+      oldCount: 2,
+      preferredOldIds: ['7', '40', '18', '5'],
+      filter: (p) => !/suit|kurta/i.test(p.category),
+    });
+    if (!mix.length) return trendingList;
+    return mix.map((p) => ({
+      id: String(p.id),
+      name: p.name,
+      price: Number(p.price),
+      image: p.image,
+      description: p.description || `${p.name} - ₹${Number(p.price).toLocaleString('en-IN')}`,
+    }));
+  }, [allProducts]);
 
   useEffect(() => {
     let active = true;
@@ -193,7 +213,7 @@ export default function HeroSection() {
                 }}
                 className="border-animation-left"
               >
-                {trendingList.map((product, idx) => (
+                {displayTrendingList.map((product, idx) => (
                   <SwiperSlide key={product.id}>
                     <div
                       className="banner-item image-zoom-effect"

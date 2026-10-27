@@ -13,6 +13,7 @@ export interface Product {
   inventory?: number;
   collection?: string;
   description?: string;
+  createdAt?: string;
 }
 
 const instaImg = (hash: string) => getProductImageByHash(hash);

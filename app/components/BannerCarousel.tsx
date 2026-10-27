@@ -1,12 +1,13 @@
 'use client';
 
 import Image from 'next/image';
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState, useMemo } from 'react';
 import { getProductImageByHash } from '../lib/productImage';
 import { addToCart } from '../lib/commerceStore';
 import { getWishlist, toggleWishlist, getWishlistEventName } from '../lib/wishlistStore';
 import { showSnackbar } from '../lib/snackbar';
 import { getCatalogProducts, type Product as FullProduct } from '../lib/productData';
+import { createProductMix } from '../lib/productMix';
 import { apiUrl } from '../lib/apiBase';
 import ProductModal from './ProductModal';
 
@@ -79,7 +80,6 @@ const banners: BannerItem[] = [
   },
 ];
 
-const TOTAL = banners.length;
 const AUTO_INTERVAL = 5000;
 const BG = '#dc747d';
 
@@ -96,6 +96,29 @@ export default function BannerCarousel() {
   const [allProducts, setAllProducts] = useState<FullProduct[]>(() => getCatalogProducts(true));
   const [selectedProduct, setSelectedProduct] = useState<FullProduct | null>(null);
   const [wishlistIds, setWishlistIds] = useState<Set<string>>(new Set());
+
+  // Dynamically generate featured banner items: mainly newly added products + a few classic old ones
+  const displayBanners: BannerItem[] = useMemo(() => {
+    const mix = createProductMix(allProducts, {
+      count: 6,
+      newCount: 4,
+      oldCount: 2,
+      preferredOldIds: ['7', '5'],
+      filter: (p) => !/suit|kurta/i.test(p.category),
+    });
+    if (!mix.length) return banners;
+    return mix.map((p, idx) => ({
+      id: idx + 1,
+      productId: String(p.id),
+      src: p.image,
+      alt: p.name,
+      name: p.name,
+      price: `₹${Number(p.price).toLocaleString('en-IN')}`,
+      tag: p.collection || p.category || 'Featured Saree',
+    }));
+  }, [allProducts]);
+
+  const TOTAL = displayBanners.length;
 
   useEffect(() => {
     let active = true;
@@ -240,7 +263,7 @@ export default function BannerCarousel() {
   // Pick visible items (1 on mobile, 3 on desktop)
   const visibleBanners: BannerItem[] = [];
   for (let i = 0; i < visibleCount; i++) {
-    visibleBanners.push(banners[(startIndex + i) % TOTAL]);
+    visibleBanners.push(displayBanners[(startIndex + i) % TOTAL]);
   }
 
   // Center card index for desktop
@@ -596,7 +619,7 @@ export default function BannerCarousel() {
 
           {/* Dots */}
           <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
-            {banners.map((_, i) => (
+            {displayBanners.map((_, i) => (
               <button
                 key={i}
                 onClick={() => handleDot(i)}

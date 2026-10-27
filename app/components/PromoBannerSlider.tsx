@@ -21,7 +21,7 @@ const BANNER_SLIDES: BannerSlide[] = [
       'https://res.cloudinary.com/p8wgrpnr/image/upload/f_auto,q_auto,w_1080/swatika_banners/mobile/banner_1.webp',
     alt: 'The Grand Diwali Sale - Flat 40% Off on Sarees',
     title: 'The Grand Diwali Sale - Flat 40% Off',
-    href: '/shop',
+    href: '/sarees',
   },
   {
     id: 2,
@@ -31,7 +31,7 @@ const BANNER_SLIDES: BannerSlide[] = [
       'https://res.cloudinary.com/p8wgrpnr/image/upload/f_auto,q_auto,w_1080/swatika_banners/mobile/banner_2.webp',
     alt: 'Diwali Sale - Festive Edit (30 Oct - 8 Nov) - Timeless Drapes',
     title: 'Diwali Sale Festive Edit',
-    href: '/shop',
+    href: '/sarees',
   },
   {
     id: 3,
@@ -41,7 +41,7 @@ const BANNER_SLIDES: BannerSlide[] = [
       'https://res.cloudinary.com/p8wgrpnr/image/upload/f_auto,q_auto,w_1080/swatika_banners/mobile/banner_3.webp',
     alt: 'Buy 2 Sarees Get Up to 60% Off - Special Festive Offer',
     title: 'Buy 2 Sarees Get Up to 60% Off',
-    href: '/shop',
+    href: '/sarees',
   },
   {
     id: 4,
@@ -51,7 +51,7 @@ const BANNER_SLIDES: BannerSlide[] = [
       'https://res.cloudinary.com/p8wgrpnr/image/upload/f_auto,q_auto,w_1080/swatika_banners/mobile/banner_4.webp',
     alt: 'Karwa Chauth Special - Flat 50% Off - Celebration of Love & Elegance',
     title: 'Karwa Chauth Special - Flat 50% Off',
-    href: '/shop',
+    href: '/sarees',
   },
 ];
 
