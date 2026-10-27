@@ -20,6 +20,7 @@ interface Product {
   id: number | string;
   name: string;
   price: string;
+  originalPrice?: number | string;
   image: string;
 }
 
@@ -109,6 +110,28 @@ export default function ProductCarousel({ title, products, sectionId }: ProductC
     const numeric = Number(price.replace(/[^\d]/g, ''));
     return Number.isFinite(numeric) ? numeric : 0;
   };
+
+  const getProductPrices = (product: Product) => {
+    const numPrice = parsePrice(product.price);
+    const cat =
+      allProducts.find((p) => String(p.id) === String(product.id)) ||
+      (product.name ? allProducts.find((p) => p.name.trim().toLowerCase() === product.name?.trim().toLowerCase()) : null);
+
+    let origPrice: number | undefined;
+    if (typeof product.originalPrice === 'number' && Number.isFinite(product.originalPrice)) {
+      origPrice = product.originalPrice;
+    } else if (typeof product.originalPrice === 'string' && product.originalPrice.trim()) {
+      const parsed = parsePrice(product.originalPrice);
+      if (parsed > 0) origPrice = parsed;
+    } else if (cat && typeof cat.originalPrice === 'number' && Number.isFinite(cat.originalPrice)) {
+      origPrice = cat.originalPrice;
+    }
+
+    const hasDiscount = Boolean(origPrice && origPrice > numPrice);
+    const discountPercent = hasDiscount && origPrice ? Math.round(((origPrice - numPrice) / origPrice) * 100) : 0;
+
+    return { numPrice, origPrice, hasDiscount, discountPercent };
+  };
   const getCheckoutHref = (product: Product) => {
     const full =
       allProducts.find((p) => String(p.id) === String(product.id)) ||
@@ -178,7 +201,9 @@ export default function ProductCarousel({ title, products, sectionId }: ProductC
               },
             }}
           >
-            {visibleProducts.map((product, index) => (
+            {visibleProducts.map((product, index) => {
+              const { origPrice, hasDiscount, discountPercent } = getProductPrices(product);
+              return (
               <SwiperSlide key={product.id}>
                 <div
                   className="product-item"
@@ -249,7 +274,7 @@ export default function ProductCarousel({ title, products, sectionId }: ProductC
                       />
                     </div>
                     
-                    {/* Out of Stock or NEW Badge */}
+                    {/* Out of Stock or Save % / NEW Badge */}
                     {isOutOfStock(product) ? (
                       <span className="badge position-absolute" style={{
                         top: '15px',
@@ -265,6 +290,22 @@ export default function ProductCarousel({ title, products, sectionId }: ProductC
                         boxShadow: '0 4px 12px rgba(0, 0, 0, 0.3)'
                       }}>
                         OUT OF STOCK
+                      </span>
+                    ) : hasDiscount ? (
+                      <span className="badge position-absolute" style={{
+                        top: '15px',
+                        left: '15px',
+                        backgroundColor: '#dc3545',
+                        color: 'white',
+                        padding: '6px 12px',
+                        fontSize: '11px',
+                        fontWeight: '700',
+                        letterSpacing: '0.5px',
+                        borderRadius: '20px',
+                        zIndex: 3,
+                        boxShadow: '0 4px 12px rgba(220, 53, 69, 0.35)'
+                      }}>
+                        Save {discountPercent}%
                       </span>
                     ) : index < 2 ? (
                       <span className="badge position-absolute" style={{
@@ -348,13 +389,24 @@ export default function ProductCarousel({ title, products, sectionId }: ProductC
                       </span>
                     </h6>
                     <div className="d-flex align-items-center justify-content-between mt-3">
-                      <span className="price fw-bold" style={{ 
-                        fontSize: '18px',
-                        color: '#667eea',
-                        fontWeight: '700'
-                      }}>
-                        {product.price}
-                      </span>
+                      <div className="d-flex align-items-baseline gap-2 flex-wrap">
+                        <span className="price fw-bold" style={{ 
+                          fontSize: '18px',
+                          color: '#667eea',
+                          fontWeight: '700'
+                        }}>
+                          {product.price}
+                        </span>
+                        {hasDiscount && origPrice && (
+                          <span className="text-muted text-decoration-line-through" style={{
+                            fontSize: '13px',
+                            color: '#999',
+                            fontWeight: '500'
+                          }}>
+                            ₹{origPrice.toLocaleString('en-IN')}
+                          </span>
+                        )}
+                      </div>
                       <span
                         role="button"
                         tabIndex={0}
@@ -365,7 +417,8 @@ export default function ProductCarousel({ title, products, sectionId }: ProductC
                           fontWeight: '600',
                           textTransform: 'uppercase',
                           letterSpacing: '0.5px',
-                          cursor: 'pointer'
+                          cursor: 'pointer',
+                          flexShrink: 0
                         }}
                       >
                         {isOutOfStock(product) ? 'Out of Stock' : 'View Details →'}
@@ -406,7 +459,8 @@ export default function ProductCarousel({ title, products, sectionId }: ProductC
                   </div>
                 </div>
               </SwiperSlide>
-            ))}
+              );
+            })}
           </Swiper>
           <div className="swiper-pagination" style={{ marginTop: '30px' }}></div>
           <div className="icon-arrow icon-arrow-left" style={{

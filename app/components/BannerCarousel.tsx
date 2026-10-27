@@ -20,6 +20,7 @@ interface BannerItem {
   alt: string;
   name: string;
   price: string;
+  originalPrice?: number;
   tag: string;
 }
 
@@ -31,6 +32,7 @@ const banners: BannerItem[] = [
     alt: 'Cream Saree with Vibrant Pink Border',
     name: 'Cream Saree – Pink Border',
     price: '₹11,000',
+    originalPrice: 16000,
     tag: 'Wedding Collection',
   },
   {
@@ -40,6 +42,7 @@ const banners: BannerItem[] = [
     alt: 'Net Embellished Saree with Mirror Work',
     name: 'Net Embellished Saree',
     price: '₹8,000',
+    originalPrice: 12000,
     tag: 'Bridal Collection',
   },
   {
@@ -49,6 +52,7 @@ const banners: BannerItem[] = [
     alt: 'Patola Silk Saree',
     name: 'Patola Silk Saree',
     price: '₹6,000',
+    originalPrice: 10000,
     tag: 'Traditional Elegance',
   },
   {
@@ -58,6 +62,7 @@ const banners: BannerItem[] = [
     alt: 'Pearl Work Net Saree',
     name: 'Pearl Work Net Saree',
     price: '₹12,000',
+    originalPrice: 18000,
     tag: 'Premium Collection',
   },
   {
@@ -67,6 +72,7 @@ const banners: BannerItem[] = [
     alt: 'Tissue Silk Saree',
     name: 'Tissue Silk Saree',
     price: '₹4,999',
+    originalPrice: 8000,
     tag: 'Festive Wear',
   },
   {
@@ -76,6 +82,7 @@ const banners: BannerItem[] = [
     alt: 'Stone Work Net Saree',
     name: 'Stone Work Net Saree',
     price: '₹11,000',
+    originalPrice: 16000,
     tag: 'Premium Collection',
   },
 ];
@@ -140,6 +147,7 @@ export default function BannerCarousel() {
       alt: p.name,
       name: p.name,
       price: `₹${Number(p.price).toLocaleString('en-IN')}`,
+      originalPrice: p.originalPrice ? Number(p.originalPrice) : undefined,
       tag: p.collection || p.category || 'Featured Saree',
     }));
   }, [allProducts, stockMap, isOutOfStock]);
@@ -417,6 +425,12 @@ export default function BannerCarousel() {
             const delay = `${i * 55}ms`;
             const sideCardScale = isMobile ? 1 : 0.95;
 
+            const numPrice = Number(banner.price.replace(/[^\d]/g, ''));
+            const cat = allProducts.find((p) => String(p.id) === String(banner.productId));
+            const origPrice = banner.originalPrice ?? (cat?.originalPrice ? Number(cat.originalPrice) : undefined);
+            const hasDiscount = Boolean(origPrice && origPrice > numPrice);
+            const discountPercent = hasDiscount && origPrice ? Math.round(((origPrice - numPrice) / origPrice) * 100) : 0;
+
             return (
               <div
                 key={`${banner.id}-${animKey}`}
@@ -504,7 +518,7 @@ export default function BannerCarousel() {
                     </div>
 
                     {/* Out of stock badge */}
-                    {isOutOfStock(banner.productId) && (
+                    {isOutOfStock(banner.productId) ? (
                       <span
                         className="badge position-absolute"
                         style={{
@@ -523,7 +537,26 @@ export default function BannerCarousel() {
                       >
                         OUT OF STOCK
                       </span>
-                    )}
+                    ) : hasDiscount ? (
+                      <span
+                        className="badge position-absolute"
+                        style={{
+                          top: '12px',
+                          right: '12px',
+                          backgroundColor: '#dc3545',
+                          color: 'white',
+                          padding: '4px 8px',
+                          fontSize: '0.62rem',
+                          fontWeight: 700,
+                          letterSpacing: '0.5px',
+                          borderRadius: '4px',
+                          zIndex: 3,
+                          boxShadow: '0 2px 8px rgba(220, 53, 69, 0.4)',
+                        }}
+                      >
+                        Save {discountPercent}%
+                      </span>
+                    ) : null}
 
                     {/* Gradient footer inside image */}
                     <div
@@ -564,16 +597,38 @@ export default function BannerCarousel() {
                     >
                       {banner.name}
                     </p>
-                    <p
+                    <div
                       style={{
-                        fontSize: 'clamp(0.92rem, 1.6vw, 1rem)',
-                        fontWeight: 800,
-                        color: BG,
+                        display: 'flex',
+                        alignItems: 'baseline',
+                        justifyContent: 'center',
+                        gap: '6px',
                         marginBottom: '8px',
+                        flexWrap: 'wrap',
                       }}
                     >
-                      {banner.price}
-                    </p>
+                      <span
+                        style={{
+                          fontSize: 'clamp(0.92rem, 1.6vw, 1rem)',
+                          fontWeight: 800,
+                          color: BG,
+                        }}
+                      >
+                        {banner.price}
+                      </span>
+                      {hasDiscount && origPrice && (
+                        <span
+                          style={{
+                            fontSize: 'clamp(0.72rem, 1.2vw, 0.82rem)',
+                            color: '#999',
+                            textDecoration: 'line-through',
+                            fontWeight: 500,
+                          }}
+                        >
+                          ₹{origPrice.toLocaleString('en-IN')}
+                        </span>
+                      )}
+                    </div>
                     <span
                       className="bc-shop-link"
                       style={{

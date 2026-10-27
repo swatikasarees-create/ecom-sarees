@@ -11,6 +11,7 @@ function formatProductsForCarousel(prods: Product[]) {
     id: p.id,
     name: p.name,
     price: `₹${p.price.toLocaleString('en-IN')}`,
+    originalPrice: p.originalPrice ? Number(p.originalPrice) : undefined,
     image: p.image,
   }));
 }

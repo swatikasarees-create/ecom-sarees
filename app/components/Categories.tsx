@@ -182,7 +182,7 @@ export default function Categories() {
       name: p.name,
       image: p.image,
       price: Number(p.price),
-      originalPrice: p.originalPrice ? Number(p.originalPrice) : Math.round(Number(p.price) * 1.4),
+      originalPrice: p.originalPrice ? Number(p.originalPrice) : 0,
     }));
   }, [allProducts, stockMap]);
 
@@ -203,7 +203,7 @@ export default function Categories() {
       name: p.name,
       image: p.image,
       price: Number(p.price),
-      originalPrice: p.originalPrice ? Number(p.originalPrice) : Math.round(Number(p.price) * 1.4),
+      originalPrice: p.originalPrice ? Number(p.originalPrice) : 0,
     }));
   }, [allProducts, stockMap]);
 
@@ -430,7 +430,7 @@ export default function Categories() {
                   </h3>
 
                   {/* Price */}
-                  <div className="d-flex align-items-center gap-2">
+                  <div className="d-flex align-items-baseline gap-2">
                     <span
                       style={{
                         fontSize: 'clamp(1rem, 2.5vw, 1.2rem)',
@@ -438,35 +438,39 @@ export default function Categories() {
                         color: '#dc747d'
                       }}
                     >
-                      Rs. {product.price.toLocaleString('en-IN')}
+                      ₹{product.price.toLocaleString('en-IN')}
                     </span>
-                    <span
-                      style={{
-                        fontSize: 'clamp(0.85rem, 2vw, 0.95rem)',
-                        fontWeight: '500',
-                        color: '#999',
-                        textDecoration: 'line-through'
-                      }}
-                    >
-                      Rs. {product.originalPrice.toLocaleString('en-IN')}
-                    </span>
+                    {product.originalPrice && product.originalPrice > product.price ? (
+                      <span
+                        style={{
+                          fontSize: 'clamp(0.85rem, 2vw, 0.95rem)',
+                          fontWeight: '500',
+                          color: '#999',
+                          textDecoration: 'line-through'
+                        }}
+                      >
+                        ₹{product.originalPrice.toLocaleString('en-IN')}
+                      </span>
+                    ) : null}
                   </div>
 
                   {/* Discount Badge */}
-                  <div
-                    style={{
-                      display: 'inline-block',
-                      marginTop: '8px',
-                      padding: '4px 10px',
-                      background: 'rgba(220, 116, 125, 0.1)',
-                      color: '#dc747d',
-                      fontSize: 'clamp(0.7rem, 1.8vw, 0.8rem)',
-                      fontWeight: '600',
-                      borderRadius: '4px'
-                    }}
-                  >
-                    {Math.round(((product.originalPrice - product.price) / product.originalPrice) * 100)}% OFF
-                  </div>
+                  {product.originalPrice && product.originalPrice > product.price ? (
+                    <div
+                      style={{
+                        display: 'inline-block',
+                        marginTop: '8px',
+                        padding: '4px 10px',
+                        background: 'rgba(220, 116, 125, 0.1)',
+                        color: '#dc747d',
+                        fontSize: 'clamp(0.7rem, 1.8vw, 0.8rem)',
+                        fontWeight: '600',
+                        borderRadius: '4px'
+                      }}
+                    >
+                      {Math.round(((product.originalPrice - product.price) / product.originalPrice) * 100)}% OFF
+                    </div>
+                  ) : null}
                   <div className="d-flex gap-2 mt-3">
                     <button
                       type="button"

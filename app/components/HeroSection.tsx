@@ -25,6 +25,7 @@ interface HeroProduct {
   id: string;
   name: string;
   price: number;
+  originalPrice?: number;
   image: string;
   description: string;
 }
@@ -34,6 +35,7 @@ const trendingList: HeroProduct[] = [
     id: '7',
     name: 'Cream Saree – Pink Border',
     price: 11000,
+    originalPrice: 16000,
     image: instaImg('ba76809e38182a59fc059fd1b5ff8d54fbef1671671d7dc2d45e60da014280e0'),
     description: 'Classic cream base meets a striking pink border and ornate motif detailing—ideal for wedding rituals and special occasions. ₹11,000',
   },
@@ -41,6 +43,7 @@ const trendingList: HeroProduct[] = [
     id: '40',
     name: 'Patola Silk Saree',
     price: 6000,
+    originalPrice: 10000,
     image: instaImg('d572b2ddeebc5c37c8eb4c63deb69e10c3543589c62374ec45558d4217058267'),
     description: 'Stunning Patola silk saree with intricate traditional patterns, vibrant red base and contrasting golden border. ₹6,000',
   },
@@ -48,6 +51,7 @@ const trendingList: HeroProduct[] = [
     id: '18',
     name: 'Tissue Silk Saree',
     price: 4999,
+    originalPrice: 8000,
     image: instaImg('33b3c5ac84e7f428324c6d67f6a7f0732598ee87e26a0b165e594c3932725ac9'),
     description: 'Luxurious tissue silk saree with a graceful silhouette and subtle natural sheen—perfect for weddings and festive celebrations. ₹4,999',
   },
@@ -55,6 +59,7 @@ const trendingList: HeroProduct[] = [
     id: '5',
     name: 'Net Embellished Saree',
     price: 8000,
+    originalPrice: 12000,
     image: instaImg('46a257b9b9f758da7849f836bf71346d414778c4382aac9c626a44c1c91301b9'),
     description: 'Seafoam saree with detailed embroidered border and sequin work for a refined shine. Sophisticated for weddings and evening celebrations. ₹8,000',
   },
@@ -62,6 +67,7 @@ const trendingList: HeroProduct[] = [
     id: '6',
     name: 'Rust Orange Silk Saree',
     price: 4500,
+    originalPrice: 7000,
     image: instaImg('b9606fa353f07c69822a7f45e9dff88435ded645dc85564219b7027cf3b5ac5f'),
     description: 'Rich rust-orange saree with bandhani-inspired pattern and standout metallic pallu—perfect for cultural events and wedding functions. ₹4,500',
   },
@@ -69,6 +75,7 @@ const trendingList: HeroProduct[] = [
     id: '35',
     name: 'Stone Work Net Saree',
     price: 11000,
+    originalPrice: 16000,
     image: instaImg('8f984c7487be2c119a063599ec22580bfdb5b1a3476cd89793531fe8ddc9c3a6'),
     description: 'Graceful net saree adorned with intricate stone work and elegant detailing—designed for luxurious sparkle at weddings and receptions. ₹11,000',
   },
@@ -115,8 +122,9 @@ export default function HeroSection() {
       id: String(p.id),
       name: p.name,
       price: Number(p.price),
+      originalPrice: p.originalPrice ? Number(p.originalPrice) : undefined,
       image: p.image,
-      description: p.description || `${p.name} - ₹${Number(p.price).toLocaleString('en-IN')}`,
+      description: p.description || `${p.name} - Handcrafted luxury saree`,
     }));
   }, [allProducts, stockMap, isOutOfStock]);
 
@@ -221,7 +229,13 @@ export default function HeroSection() {
                 }}
                 className="border-animation-left"
               >
-                {displayTrendingList.map((product, idx) => (
+                {displayTrendingList.map((product, idx) => {
+                  const cat = allProducts.find((p) => String(p.id) === String(product.id));
+                  const origPrice = product.originalPrice ?? (cat?.originalPrice ? Number(cat.originalPrice) : undefined);
+                  const hasDiscount = Boolean(origPrice && origPrice > product.price);
+                  const discountPercent = hasDiscount && origPrice ? Math.round(((origPrice - product.price) / origPrice) * 100) : 0;
+
+                  return (
                   <SwiperSlide key={product.id}>
                     <div
                       className="banner-item image-zoom-effect"
@@ -261,7 +275,7 @@ export default function HeroSection() {
                           priority={idx === 0}
                           unoptimized
                         />
-                        {isOutOfStock(product) && (
+                        {isOutOfStock(product) ? (
                           <span
                             className="badge position-absolute"
                             style={{
@@ -280,7 +294,26 @@ export default function HeroSection() {
                           >
                             OUT OF STOCK
                           </span>
-                        )}
+                        ) : hasDiscount ? (
+                          <span
+                            className="badge position-absolute"
+                            style={{
+                              top: '15px',
+                              left: '15px',
+                              backgroundColor: '#dc3545',
+                              color: 'white',
+                              padding: '6px 12px',
+                              fontSize: '11px',
+                              fontWeight: '700',
+                              letterSpacing: '0.5px',
+                              borderRadius: '20px',
+                              zIndex: 3,
+                              boxShadow: '0 4px 12px rgba(220, 53, 69, 0.35)',
+                            }}
+                          >
+                            Save {discountPercent}%
+                          </span>
+                        ) : null}
                       </div>
                       <div className="banner-content py-3 py-md-4 px-2 px-md-0">
                         <h5 className="element-title text-uppercase" style={{ fontSize: 'clamp(0.9rem, 3vw, 1.25rem)' }}>
@@ -294,6 +327,21 @@ export default function HeroSection() {
                             {product.name}
                           </span>
                         </h5>
+                        <div className="d-flex align-items-baseline gap-2 mb-2 flex-wrap">
+                          <span className="fw-bold text-dark" style={{ fontSize: 'clamp(1rem, 2.2vw, 1.2rem)' }}>
+                            ₹{product.price.toLocaleString('en-IN')}
+                          </span>
+                          {hasDiscount && origPrice && (
+                            <span className="text-muted text-decoration-line-through" style={{ fontSize: 'clamp(0.8rem, 1.8vw, 0.95rem)' }}>
+                              ₹{origPrice.toLocaleString('en-IN')}
+                            </span>
+                          )}
+                          {hasDiscount && (
+                            <span className="badge bg-danger ms-1" style={{ fontSize: '0.7rem' }}>
+                              Save {discountPercent}%
+                            </span>
+                          )}
+                        </div>
                         <p className="d-none d-md-block" style={{ fontSize: 'clamp(0.85rem, 2vw, 1rem)' }}>
                           {product.description}
                         </p>
@@ -310,7 +358,8 @@ export default function HeroSection() {
                       </div>
                     </div>
                   </SwiperSlide>
-                ))}
+                  );
+                })}
               </Swiper>
               <div className="swiper-pagination"></div>
               <div className="icon-arrow icon-arrow-left">
