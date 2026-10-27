@@ -3,6 +3,7 @@ import crypto from 'crypto';
 import { getDbPool, ensureOrdersTables, ensureProductsTable } from '@/app/lib/db';
 import { corsAllowOrigin, jsonWithCors } from '@/app/lib/cors';
 import { getCatalogProducts } from '@/app/lib/productData';
+import { sendOrderNotificationEmails } from '@/app/lib/email';
 import { RowDataPacket } from 'mysql2';
 
 export const dynamic = 'force-dynamic';
@@ -273,6 +274,30 @@ export async function POST(request: NextRequest) {
       }
 
       await connection.commit();
+
+      // Send order confirmation to customer and alert to admin (non-blocking)
+      sendOrderNotificationEmails({
+        orderId,
+        customer: {
+          name: body.customer.name.trim(),
+          phone: body.customer.phone.trim(),
+          email: body.customer.email.trim(),
+          addressLine1: body.customer.addressLine1.trim(),
+          addressLine2: body.customer.addressLine2?.trim(),
+          city: body.customer.city.trim(),
+          stateName: body.customer.stateName.trim(),
+          pincode: body.customer.pincode.trim(),
+          notes: body.customer.notes?.trim(),
+        },
+        items: verifiedItems,
+        amount: Number(computedAmount.toFixed(2)),
+        paymentMode: body.paymentMode,
+        status: orderStatus,
+        paymentId: paymentIdToStore,
+      }).catch((emailErr) => {
+        console.error('[email] Error sending order emails:', emailErr);
+      });
+
       return jsonWithCors(request, {
         success: true,
         orderId,
