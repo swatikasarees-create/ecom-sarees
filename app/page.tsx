@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import TopHeader from './components/TopHeader';
 import HeaderShell from './components/HeaderShell';
+import PromoBannerSlider from './components/PromoBannerSlider';
 import BannerCarousel from './components/BannerCarousel';
 import PromoMarquee from './components/PromoMarquee';
 import ShopByCategory from './components/ShopByCategory';
@@ -56,6 +57,7 @@ export default function Home() {
       <SvgIcons />
       <TopHeader />
       <HeaderShell />
+      <PromoBannerSlider />
       <BannerCarousel />
       <PromoMarquee />
       <ShopByCategory />
