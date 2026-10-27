@@ -170,10 +170,13 @@ export default function Categories() {
       count: 3,
       newCount: 2,
       oldCount: 1,
-      preferredOldIds: ['7', '31', '40'],
+      preferredOldIds: ['7', '31', '5'],
+      stockMap,
+      excludeOutOfStock: true,
       filter: (p) => !/suit|kurta/i.test(p.category),
     });
-    if (!mix.length) return bestSellers;
+    const fallback = bestSellers.filter((p) => !isOutOfStock(p));
+    if (!mix.length) return fallback;
     return mix.map((p) => ({
       id: Number(p.id),
       name: p.name,
@@ -181,7 +184,7 @@ export default function Categories() {
       price: Number(p.price),
       originalPrice: p.originalPrice ? Number(p.originalPrice) : Math.round(Number(p.price) * 1.4),
     }));
-  }, [allProducts]);
+  }, [allProducts, stockMap]);
 
   const dynamicNewArrivals: Product[] = useMemo(() => {
     const mix = createProductMix(allProducts, {
@@ -189,9 +192,12 @@ export default function Categories() {
       newCount: 2,
       oldCount: 1,
       preferredOldIds: ['18', '41', '36'],
+      stockMap,
+      excludeOutOfStock: true,
       filter: (p) => !/suit|kurta/i.test(p.category),
     });
-    if (!mix.length) return newArrivals;
+    const fallback = newArrivals.filter((p) => !isOutOfStock(p));
+    if (!mix.length) return fallback;
     return mix.map((p) => ({
       id: Number(p.id),
       name: p.name,
@@ -199,7 +205,7 @@ export default function Categories() {
       price: Number(p.price),
       originalPrice: p.originalPrice ? Number(p.originalPrice) : Math.round(Number(p.price) * 1.4),
     }));
-  }, [allProducts]);
+  }, [allProducts, stockMap]);
 
   const displayProducts = activeTab === 'bestSellers' ? dynamicBestSellers : dynamicNewArrivals;
 

@@ -23,6 +23,10 @@ export const metadata: Metadata = {
 };
 
 export default function Home() {
+  const inStockInitialProducts = products.filter(
+    (p) => p.availability !== 'out_of_stock' && (typeof p.inventory !== 'number' || p.inventory > 0)
+  );
+
   return (
     <>
       <AOSInit />
@@ -39,7 +43,7 @@ export default function Home() {
       <Instagram />
       <Categories />
       <SectionSeparator />
-      <HomeCarouselsSection initialProducts={products} />
+      <HomeCarouselsSection initialProducts={inStockInitialProducts} />
       <SectionSeparator />
       <Footer />
       <ScrollToTop />

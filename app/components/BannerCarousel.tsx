@@ -97,16 +97,42 @@ export default function BannerCarousel() {
   const [selectedProduct, setSelectedProduct] = useState<FullProduct | null>(null);
   const [wishlistIds, setWishlistIds] = useState<Set<string>>(new Set());
 
-  // Dynamically generate featured banner items: mainly newly added products + a few classic old ones
+  const isOutOfStock = useCallback(
+    (productId: string, name?: string) => {
+      const stock = stockMap[productId];
+      if (stock) {
+        return stock.inventory <= 0 || stock.availability === 'out_of_stock';
+      }
+      const cat =
+        allProducts.find((p) => String(p.id) === String(productId)) ||
+        (name
+          ? allProducts.find(
+              (p) =>
+                p.name.trim().toLowerCase() === name.trim().toLowerCase() ||
+                p.name.toLowerCase().includes(name.toLowerCase())
+            )
+          : null);
+      if (cat) {
+        return cat.availability === 'out_of_stock' || (cat.inventory !== undefined && cat.inventory <= 0);
+      }
+      return false;
+    },
+    [allProducts, stockMap]
+  );
+
+  // Dynamically generate featured banner items: mainly newly added products + a few classic old ones (in stock only)
   const displayBanners: BannerItem[] = useMemo(() => {
     const mix = createProductMix(allProducts, {
       count: 6,
       newCount: 4,
       oldCount: 2,
-      preferredOldIds: ['7', '5'],
+      preferredOldIds: ['7', '5', '18', '31'],
+      stockMap,
+      excludeOutOfStock: true,
       filter: (p) => !/suit|kurta/i.test(p.category),
     });
-    if (!mix.length) return banners;
+    const fallbackBanners = banners.filter((b) => !isOutOfStock(b.productId, b.name));
+    if (!mix.length) return fallbackBanners;
     return mix.map((p, idx) => ({
       id: idx + 1,
       productId: String(p.id),
@@ -116,7 +142,7 @@ export default function BannerCarousel() {
       price: `₹${Number(p.price).toLocaleString('en-IN')}`,
       tag: p.collection || p.category || 'Featured Saree',
     }));
-  }, [allProducts]);
+  }, [allProducts, stockMap, isOutOfStock]);
 
   const TOTAL = displayBanners.length;
 
@@ -153,19 +179,7 @@ export default function BannerCarousel() {
     return () => window.removeEventListener(eventName, syncWishlist);
   }, []);
 
-  const isOutOfStock = (productId: string, name?: string) => {
-    const stock = stockMap[productId];
-    if (stock) {
-      return stock.inventory <= 0 || stock.availability === 'out_of_stock';
-    }
-    const cat =
-      allProducts.find((p) => String(p.id) === String(productId)) ||
-      (name ? allProducts.find((p) => p.name.trim().toLowerCase() === name.trim().toLowerCase() || p.name.toLowerCase().includes(name.toLowerCase())) : null);
-    if (cat) {
-      return cat.availability === 'out_of_stock' || (cat.inventory !== undefined && cat.inventory <= 0);
-    }
-    return false;
-  };
+
 
   const openProductModal = (banner: BannerItem) => {
     const full =

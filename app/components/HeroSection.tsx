@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useCallback } from 'react';
 import { Swiper, SwiperSlide } from 'swiper/react';
 import { Pagination, Navigation } from 'swiper/modules';
 import Image from 'next/image';
@@ -80,16 +80,37 @@ export default function HeroSection() {
   const [selectedProduct, setSelectedProduct] = useState<FullProduct | null>(null);
   const [wishlistIds, setWishlistIds] = useState<Set<string>>(new Set());
 
-  // Dynamically generate trending items: mainly newly added products + a few classic old ones
+  const isOutOfStock = useCallback(
+    (product: HeroProduct) => {
+      const stock = stockMap[product.id];
+      if (stock) {
+        return stock.inventory <= 0 || stock.availability === 'out_of_stock';
+      }
+      const cat =
+        allProducts.find((p) => String(p.id) === String(product.id)) ||
+        allProducts.find((p) => p.name.trim().toLowerCase() === product.name.trim().toLowerCase()) ||
+        allProducts.find((p) => p.name.toLowerCase().includes(product.name.toLowerCase()));
+      if (cat) {
+        return cat.availability === 'out_of_stock' || (cat.inventory !== undefined && cat.inventory <= 0);
+      }
+      return false;
+    },
+    [allProducts, stockMap]
+  );
+
+  // Dynamically generate trending items: mainly newly added products + a few classic old ones (in stock only)
   const displayTrendingList = useMemo(() => {
     const mix = createProductMix(allProducts, {
       count: 6,
       newCount: 4,
       oldCount: 2,
-      preferredOldIds: ['7', '40', '18', '5'],
+      preferredOldIds: ['7', '18', '5', '31', '35'],
+      stockMap,
+      excludeOutOfStock: true,
       filter: (p) => !/suit|kurta/i.test(p.category),
     });
-    if (!mix.length) return trendingList;
+    const fallbackList = trendingList.filter((p) => !isOutOfStock(p));
+    if (!mix.length) return fallbackList;
     return mix.map((p) => ({
       id: String(p.id),
       name: p.name,
@@ -97,7 +118,7 @@ export default function HeroSection() {
       image: p.image,
       description: p.description || `${p.name} - ₹${Number(p.price).toLocaleString('en-IN')}`,
     }));
-  }, [allProducts]);
+  }, [allProducts, stockMap, isOutOfStock]);
 
   useEffect(() => {
     let active = true;
@@ -132,20 +153,7 @@ export default function HeroSection() {
     return () => window.removeEventListener(eventName, syncWishlist);
   }, []);
 
-  const isOutOfStock = (product: HeroProduct) => {
-    const stock = stockMap[product.id];
-    if (stock) {
-      return stock.inventory <= 0 || stock.availability === 'out_of_stock';
-    }
-    const cat =
-      allProducts.find((p) => String(p.id) === String(product.id)) ||
-      allProducts.find((p) => p.name.trim().toLowerCase() === product.name.trim().toLowerCase()) ||
-      allProducts.find((p) => p.name.toLowerCase().includes(product.name.toLowerCase()));
-    if (cat) {
-      return cat.availability === 'out_of_stock' || (cat.inventory !== undefined && cat.inventory <= 0);
-    }
-    return false;
-  };
+
 
   const openProductModal = (product: HeroProduct) => {
     const full =

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { Swiper, SwiperSlide } from 'swiper/react';
 import { Pagination, Navigation } from 'swiper/modules';
 import Image from 'next/image';
@@ -126,6 +126,11 @@ export default function ProductCarousel({ title, products, sectionId }: ProductC
     });
   };
 
+  // Products with 0 stock / out of stock should not be visible on the homepage
+  const visibleProducts = useMemo(() => {
+    return products.filter((p) => !isOutOfStock(p));
+  }, [products, stockMap, allProducts]);
+
   return (
     <section id={sectionId} className="product-carousel py-4 py-md-5 position-relative overflow-hidden" style={{ background: '#fafafa' }}>
       <div className="container">
@@ -173,7 +178,7 @@ export default function ProductCarousel({ title, products, sectionId }: ProductC
               },
             }}
           >
-            {products.map((product, index) => (
+            {visibleProducts.map((product, index) => (
               <SwiperSlide key={product.id}>
                 <div
                   className="product-item"

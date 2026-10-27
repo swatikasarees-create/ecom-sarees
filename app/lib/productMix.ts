@@ -1,12 +1,28 @@
 import type { Product } from './productData';
 
+export type StockMap = Record<string, { inventory: number; availability: string }>;
+
+/**
+ * Checks whether a product has stock available (> 0) and is not marked out of stock.
+ */
+export function isProductInStock(p: Product, stockMap?: StockMap): boolean {
+  if (stockMap && stockMap[String(p.id)]) {
+    const s = stockMap[String(p.id)];
+    if (s.availability === 'out_of_stock') return false;
+    if (typeof s.inventory === 'number' && s.inventory <= 0) return false;
+    return true;
+  }
+  if (p.availability === 'out_of_stock') return false;
+  if (typeof p.inventory === 'number' && p.inventory <= 0) return false;
+  return true;
+}
+
 /**
  * Sorts products with newest additions first.
  * Checks createdAt timestamp if available, then numeric ID descending.
  */
 export function sortNewAdditionsFirst(items: Product[]): Product[] {
   return [...items].sort((a, b) => {
-    // Keep test product at end
     if (a.id === '__test_1inr') return 1;
     if (b.id === '__test_1inr') return -1;
 
@@ -56,13 +72,22 @@ export interface ProductMixOptions {
   oldCount?: number;
   filter?: (p: Product) => boolean;
   preferredOldIds?: string[];
+  stockMap?: StockMap;
+  excludeOutOfStock?: boolean;
 }
 
 /**
- * Creates a dynamic mix of mainly newly added products with a few classic old ones.
+ * Creates a dynamic mix of mainly newly added products with a few classic old ones,
+ * excluding any products with 0 stock (by default).
  */
 export function createProductMix(allProducts: Product[], options: ProductMixOptions = {}): Product[] {
-  const eligible = options.filter ? allProducts.filter(options.filter) : allProducts;
+  const shouldExcludeOutOfStock = options.excludeOutOfStock !== false;
+  
+  let eligible = options.filter ? allProducts.filter(options.filter) : allProducts;
+  if (shouldExcludeOutOfStock) {
+    eligible = eligible.filter((p) => isProductInStock(p, options.stockMap));
+  }
+
   if (!eligible.length) return [];
 
   const count = options.count ?? 8;
@@ -92,7 +117,7 @@ export function createProductMix(allProducts: Product[], options: ProductMixOpti
   if (oldPool.length === 0) return sortedNewest.slice(0, count);
 
   const selectedNew = newPool.slice(0, newCount);
-  const preferred = options.preferredOldIds ?? ['7', '5', '40', '18', '31', '35', '6'];
+  const preferred = options.preferredOldIds ?? ['7', '5', '18', '31', '35', '6', '40'];
   const preferredItems = preferred
     .map((id) => oldPool.find((p) => String(p.id) === String(id)))
     .filter((p): p is Product => Boolean(p));

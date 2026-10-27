@@ -149,7 +149,8 @@ const baseProducts: Product[] = [
     category: 'Cotton Sarees',
     fabric: 'Cotton',
     color: 'Pistachio Green',
-    availability: 'in_stock',
+    availability: 'out_of_stock',
+    inventory: 0,
     collection: 'Traditional Collection',
     description: 'A sophisticated pistachio saree accented with a broad gold brocade-style pallu for a rich, traditional finish. The subtle floral touches add charm, making it a beautiful pick for weddings and formal celebrations.'
   },
@@ -190,7 +191,8 @@ const baseProducts: Product[] = [
     category: 'Designer Sarees',
     fabric: 'Banarasi Silk',
     color: 'Red',
-    availability: 'in_stock',
+    availability: 'out_of_stock',
+    inventory: 0,
     collection: 'Wedding Collection',
     description: 'A classic red saree featuring rich woven-style motifs and an embellished border for a regal finish. Designed for weddings and grand festivities—an evergreen piece that photographs beautifully.'
   },
@@ -441,7 +443,8 @@ const baseProducts: Product[] = [
     category: 'Cotton Sarees',
     fabric: 'Pure Cotton',
     color: 'Multi',
-    availability: 'in_stock',
+    availability: 'out_of_stock',
+    inventory: 0,
     collection: 'Casual Collection',
     description: 'Beautiful printed cotton saree featuring elegant floral motifs and a subtle contrast border. Lightweight, breathable, and perfect for daily wear or casual occasions. Saree Length: 5.5m + 0.8m blouse.'
   },
@@ -454,7 +457,8 @@ const baseProducts: Product[] = [
     category: 'Designer Sarees',
     fabric: 'Cotton',
     color: 'Multi',
-    availability: 'in_stock',
+    availability: 'out_of_stock',
+    inventory: 0,
     collection: 'Ajrakh Collection',
     description: 'Elegant Ajrakh print saree featuring traditional motifs with a rich contrast border and detailed pallu. Perfect for adding a touch of heritage charm to your ethnic collection. Saree Length: 5.5m + 0.8m blouse.'
   },
@@ -493,7 +497,8 @@ const baseProducts: Product[] = [
     category: 'Designer Sarees',
     fabric: 'Woven Fabric',
     color: 'Green',
-    availability: 'in_stock',
+    availability: 'out_of_stock',
+    inventory: 0,
     collection: 'Wedding Collection',
     description: 'Graceful green saree featuring rich woven motifs with intricate zari-style border detailing. Crafted to give a luxurious and elegant look—perfect for weddings, festive occasions, and special celebrations.'
   },
@@ -532,7 +537,8 @@ const baseProducts: Product[] = [
     category: 'Silk Sarees',
     fabric: 'Patola Silk',
     color: 'Red-Gold',
-    availability: 'in_stock',
+    availability: 'out_of_stock',
+    inventory: 0,
     collection: 'Wedding Collection',
     description: 'This stunning Patola silk saree showcases intricate traditional patterns with a vibrant red base and contrasting golden border—timeless ethnic charm perfect for weddings, festive occasions, and cultural celebrations.'
   },
